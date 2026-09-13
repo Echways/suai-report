@@ -1,0 +1,33 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Демо-отчёт
+      - uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+          working_directory: demo
+          latexmk_use_xelatex: true
+
+      # Заготовка, созданная генератором, тоже должна собираться
+      - run: python3 scripts/report.py new ci/lab-1 --no-open --title "Проверка"
+      - uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+          working_directory: ci/lab-1
+          latexmk_use_xelatex: true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pdf
+          path: |
+            demo/main.pdf
+            ci/lab-1/main.pdf

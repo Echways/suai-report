@@ -1,0 +1,805 @@
+%%=====================================================================
+%%  guap.sty — оформление отчёта ГУАП по ГОСТ 7.32-2017 / ГОСТ 2.105-2019
+%%  Компилятор: XeLaTeX (или LuaLaTeX)
+%%=====================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{guap}[2026/09/13 v1.1 GUAP GOST 7.32-2017 report style]
+
+\RequirePackage{iftex}
+\ifPDFTeX
+  \PackageError{guap}{Trebuetsya XeLaTeX ili LuaLaTeX}%
+    {Overleaf: Menu -> Settings -> Compiler -> XeLaTeX}
+\fi
+
+%%---------------------------------------------------------------------
+%%  1. ШРИФТЫ
+%%  Times New Roman нет в базовой установке Overleaf, поэтому есть
+%%  автоподмена на TeX Gyre Termes (метрически идентичен TNR).
+%%  Чтобы получить настоящий TNR: загрузите times.ttf/timesbd.ttf/
+%%  timesi.ttf/timesbi.ttf в папку fonts/ и раскомментируйте блок ниже.
+%%---------------------------------------------------------------------
+\RequirePackage{fontspec}
+\defaultfontfeatures[\rmfamily,\sffamily]{Ligatures=TeX} % в коде кавычки остаются прямыми
+
+% \setmainfont{Times New Roman}[
+%   Path            = ./fonts/,
+%   Extension       = .ttf,
+%   UprightFont     = times,
+%   BoldFont        = timesbd,
+%   ItalicFont      = timesi,
+%   BoldItalicFont  = timesbi ]
+
+%% Цепочка: Times New Roman -> TeX Gyre Termes -> Liberation Serif.
+%% Все три метрически совместимы и содержат кириллицу.
+\IfFontExistsTF{Times New Roman}
+  {\setmainfont{Times New Roman}}
+  {\IfFontExistsTF{LiberationSerif-Regular.ttf}
+     {\setmainfont{Liberation Serif}}
+     {\setmainfont{TeX Gyre Termes}}}
+\IfFontExistsTF{LiberationSans-Regular.ttf}
+  {\setsansfont{Liberation Sans}}
+  {\setsansfont{TeX Gyre Heros}}
+\IfFontExistsTF{LiberationMono-Regular.ttf}
+  {\setmonofont{Liberation Mono}[Scale=MatchLowercase]}
+  {\setmonofont{TeX Gyre Cursor}[Scale=MatchLowercase]}
+
+\RequirePackage[english,russian]{babel}
+
+%%---------------------------------------------------------------------
+%%  2. ПОЛЯ (ГОСТ 7.32-2017, п. 6.1.1)
+%%  левое 30, правое 15, верхнее и нижнее 20 мм.
+%%  Правое поле 10 мм: \geometry{right=10mm} в преамбуле main.tex.
+%%---------------------------------------------------------------------
+\RequirePackage[a4paper,left=30mm,right=15mm,top=20mm,bottom=20mm,
+                footskip=12mm,headsep=0pt]{geometry}
+
+%%---------------------------------------------------------------------
+%%  3. АБЗАЦ, ИНТЕРЛИНЬЯЖ, ПЕРЕНОСЫ
+%%---------------------------------------------------------------------
+\RequirePackage{setspace}
+\onehalfspacing                 % полуторный; как «1,5» в Word — \setstretch{1.25}
+
+\RequirePackage{indentfirst}
+\setlength{\parindent}{1.25cm}  % абзацный отступ
+\setlength{\parskip}{0pt}
+
+\clubpenalty=10000              % запрет висячих строк
+\widowpenalty=10000
+\emergencystretch=2em           % вместо \sloppy: аккуратнее по межсловию
+\RequirePackage{microtype}
+
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{float}
+\RequirePackage{listings}
+\graphicspath{{images/}{./}}
+
+%%---------------------------------------------------------------------
+%%  4. ЗАГОЛОВКИ (ГОСТ 7.32-2017, п. 6.2)
+%%  - структурные элементы (СОДЕРЖАНИЕ, ВВЕДЕНИЕ, ...) — по центру,
+%%    прописными, каждый с новой страницы;
+%%  - разделы/подразделы — с абзацного отступа, с прописной буквы,
+%%    полужирным, без точки в конце.
+%%---------------------------------------------------------------------
+\RequirePackage{titlesec}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+% без полужирного: \renewcommand{\guapheadfont}{\normalfont\fontsize{14}{17}\selectfont}
+\newcommand{\guapheadfont}{\normalfont\fontsize{14}{17}\selectfont\bfseries}
+
+%% Абзацный отступ задаётся внутри метки: \raggedright обнуляет \leftskip,
+%% поэтому левый отступ \titlespacing здесь не сработал бы.
+\titleformat{\section}[block]
+  {\guapheadfont\raggedright}{\hspace*{\parindent}\thesection}{0.6em}{}
+\titleformat{\subsection}[block]
+  {\guapheadfont\raggedright}{\hspace*{\parindent}\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}[block]
+  {\guapheadfont\raggedright}{\hspace*{\parindent}\thesubsubsection}{0.6em}{}
+
+\titlespacing{\section}{0pt}{0pt}{14pt}
+\titlespacing{\subsection}{0pt}{14pt}{14pt}
+\titlespacing{\subsubsection}{0pt}{14pt}{14pt}
+
+% ненумерованные заголовки — по центру, ПРОПИСНЫМИ
+\titleformat{name=\section,numberless}[block]
+  {\guapheadfont\filcenter}{}{0pt}{\MakeUppercase}
+\titlespacing{name=\section,numberless}{0pt}{0pt}{14pt}
+
+\newcommand{\sectionbreak}{\clearpage}   % каждый раздел — с новой страницы
+
+%% Структурный элемент: \guapsection{Введение}
+\newcommand{\guapsection}[1]{%
+  \clearpage
+  \phantomsection
+  \section*{#1}%
+  \addcontentsline{toc}{section}{\texorpdfstring{\MakeUppercase{#1}}{#1}}%
+}
+
+%%---------------------------------------------------------------------
+%%  5. СОДЕРЖАНИЕ
+%%---------------------------------------------------------------------
+\RequirePackage{tocloft}
+\renewcommand{\cfttoctitlefont}{\hfill\guapheadfont}
+\renewcommand{\cftaftertoctitle}{\hfill\null}
+\setlength{\cftbeforetoctitleskip}{0pt}
+\setlength{\cftaftertoctitleskip}{14pt}
+\renewcommand{\cftsecfont}{\normalfont}
+\renewcommand{\cftsecpagefont}{\normalfont}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\setlength{\cftbeforesecskip}{0pt}
+\setlength{\cftsecindent}{0pt}
+\setlength{\cftsecnumwidth}{1.7em}
+\setlength{\cftsubsecindent}{1.7em}
+\setlength{\cftsubsecnumwidth}{2.6em}
+\setlength{\cftsubsubsecindent}{4.3em}
+\setlength{\cftsubsubsecnumwidth}{3.4em}
+
+\newcommand{\guaptoc}{\clearpage\tableofcontents}
+
+%%---------------------------------------------------------------------
+%%  6. ПОДПИСИ К РИСУНКАМ И ТАБЛИЦАМ (ГОСТ 7.32-2017, пп. 6.5, 6.6)
+%%  «Рисунок 1 – Название» — по центру под рисунком.
+%%  «Таблица 1 – Название» — слева над таблицей без абзацного отступа.
+%%---------------------------------------------------------------------
+\RequirePackage{caption}
+\captionsetup{labelsep=endash,font=normalsize,skip=6pt}
+\captionsetup[figure]{name=Рисунок,position=below,
+                      justification=centering,singlelinecheck=false}
+\captionsetup[table]{name=Таблица,position=above,
+                     justification=raggedright,singlelinecheck=false}
+
+\AtBeginDocument{\renewcommand{\contentsname}{СОДЕРЖАНИЕ}}
+
+%%---------------------------------------------------------------------
+%%  7. ТАБЛИЦЫ
+%%---------------------------------------------------------------------
+\RequirePackage{array,longtable,tabularx,multirow}
+\renewcommand{\arraystretch}{1.25}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}   % центр
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}} % влево
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}  % вправо
+\newcolumntype{Y}{>{\centering\arraybackslash}X}          % для tabularx
+
+% Текст в таблицах — одинарный интервал (допускается ГОСТ)
+\RequirePackage{etoolbox}
+\AtBeginEnvironment{tabular}{\singlespacing}
+\AtBeginEnvironment{tabularx}{\singlespacing}
+\AtBeginEnvironment{longtable}{\singlespacing}
+
+%%---------------------------------------------------------------------
+%%  8. ПЕРЕЧИСЛЕНИЯ (ГОСТ 2.105: дефис либо строчная буква со скобкой,
+%%     буквы ё, з, й, о, ч, ъ, ы, ь не используются)
+%%---------------------------------------------------------------------
+\RequirePackage{enumitem}
+\setlist{nosep,topsep=0pt,partopsep=0pt,parsep=0pt,itemsep=0pt,
+         leftmargin=*,labelindent=\parindent,labelsep=0.5em,align=left}
+\setlist[itemize,1]{label={--}}
+\setlist[itemize,2]{label={--},labelindent=2cm}
+\setlist[enumerate,1]{label=\arabic*)}
+
+\makeatletter
+\newcommand{\@gostletter}[1]{%
+  \ifcase#1\relax\or а\or б\or в\or г\or д\or е\or ж\or и\or к\or л\or
+  м\or н\or п\or р\or с\or т\or у\or ф\or х\or ц\or ш\or щ\or э\or ю\or я\fi}
+\newcommand{\gostletter}[1]{\expandafter\@gostletter\csname c@#1\endcsname}
+\AddEnumerateCounter{\gostletter}{\@gostletter}{я}
+\makeatother
+
+\newlist{gostenum}{enumerate}{2}
+\setlist[gostenum,1]{label=\gostletter*),labelindent=\parindent}
+\setlist[gostenum,2]{label=\arabic*),labelindent=2cm}
+
+%%---------------------------------------------------------------------
+%%  9. ЛИСТИНГИ КОДА
+%%---------------------------------------------------------------------
+%% Подпись листинга формирует сам listings (captionpos=t):
+%% «Листинг 1 – Название», по центру над кодом.
+\renewcommand{\lstlistingname}{Листинг}
+
+\definecolor{guapFrame}{HTML}{B5B5B5}
+\definecolor{guapKeyword}{HTML}{0B4F9E}
+\definecolor{guapComment}{HTML}{5C7A5C}
+\definecolor{guapString}{HTML}{A03030}
+\definecolor{guapBack}{HTML}{FAFAFA}
+
+% Ч/б стиль — безопасен для печати и нормоконтроля
+\lstdefinestyle{gost}{
+  basicstyle=\ttfamily\fontsize{12}{14}\selectfont,
+  numbers=left, numberstyle=\ttfamily\fontsize{10}{12}\selectfont,
+  numbersep=10pt, stepnumber=1,
+  frame=single, rulecolor=\color{guapFrame}, framesep=5pt,
+  breaklines=true, breakatwhitespace=true,
+  postbreak=\mbox{\textcolor{guapFrame}{$\hookrightarrow$}\space},
+  showstringspaces=false, tabsize=4, columns=fullflexible,
+  keepspaces=true, extendedchars=true, upquote=true,
+  captionpos=t, aboveskip=10pt, belowskip=10pt,
+  xleftmargin=\parindent, xrightmargin=0pt,
+  keywordstyle=\bfseries, commentstyle=\itshape,
+  stringstyle=\normalfont\ttfamily,
+}
+% Цветной стиль — для электронной версии: \lstset{style=gostcolor}
+\lstdefinestyle{gostcolor}{
+  style=gost,
+  backgroundcolor=\color{guapBack},
+  keywordstyle=\bfseries\color{guapKeyword},
+  commentstyle=\itshape\color{guapComment},
+  stringstyle=\color{guapString},
+}
+\lstset{style=gost}
+
+%%---------------------------------------------------------------------
+%% 10. ФОРМУЛЫ
+%%  Сквозная нумерация (1), (2)... По разделам (1.1):
+%%  \numberwithin{equation}{section} в преамбуле main.tex.
+%%---------------------------------------------------------------------
+
+%%---------------------------------------------------------------------
+%% 11. ПРИЛОЖЕНИЯ (ГОСТ 7.32-2017, п. 6.14)
+%%  Использование: \guapapp{Название}  или  \guapapp[справочное]{Название}
+%%---------------------------------------------------------------------
+\newcounter{guapappcnt}
+\newcommand{\guapappletter}{\gostupperletter{\value{guapappcnt}}}
+\newcommand{\gostupperletter}[1]{%
+  \ifcase#1\relax\or А\or Б\or В\or Г\or Д\or Е\or Ж\or И\or К\or Л\or
+  М\or Н\or П\or Р\or С\or Т\or У\or Ф\or Х\or Ц\or Ш\or Щ\or Э\or Ю\or Я\fi}
+
+\newcommand{\guapapp}[2][обязательное]{%
+  \clearpage
+  \stepcounter{guapappcnt}%
+  \phantomsection
+  \addcontentsline{toc}{section}%
+    {\texorpdfstring{ПРИЛОЖЕНИЕ~\guapappletter\ #2}{Прил. #2}}%
+  \setcounter{figure}{0}\setcounter{table}{0}%
+  \setcounter{equation}{0}\setcounter{lstlisting}{0}%
+  \renewcommand{\thefigure}{\guapappletter.\arabic{figure}}%
+  \renewcommand{\thetable}{\guapappletter.\arabic{table}}%
+  \renewcommand{\theequation}{\guapappletter.\arabic{equation}}%
+  \renewcommand{\thelstlisting}{\guapappletter.\arabic{lstlisting}}%
+  % уникальные якоря hyperref, иначе ссылки ведут на рисунок 1 из основной части
+  \renewcommand{\theHfigure}{app\arabic{guapappcnt}.\arabic{figure}}%
+  \renewcommand{\theHtable}{app\arabic{guapappcnt}.\arabic{table}}%
+  \renewcommand{\theHequation}{app\arabic{guapappcnt}.\arabic{equation}}%
+  \renewcommand{\theHlstlisting}{app\arabic{guapappcnt}.\arabic{lstlisting}}%
+  {\centering
+   {\guapheadfont ПРИЛОЖЕНИЕ~\guapappletter\par}
+   \vspace{2pt}
+   {\normalfont(#1)\par}
+   \vspace{8pt}
+   {\guapheadfont\MakeUppercase{#2}\par}}
+  \vspace{14pt}\par
+}
+
+%%---------------------------------------------------------------------
+%% 12. ТИТУЛЬНЫЙ ЛИСТ ГУАП
+%%  Данные: \guapsetup{ключ = значение, ...}, вывод: \maketitle.
+%%  Вёрстка снята с официального бланка ГУАП (Word): Times 12 pt,
+%%  название работы и дисциплины 14 pt, подписи под линиями 10 pt,
+%%  поля титула 30/10/20/20 мм. Расстояния — между базовыми линиями,
+%%  в bp (пункты Word), кегли 12.045 pt = 12 bp.
+%%---------------------------------------------------------------------
+\ExplSyntaxOn
+\keys_define:nn { guap }
+  {
+    department   .tl_set:c = guap@department,
+    teacher-post .tl_set:c = guap@teacherpost,
+    teacher      .tl_set:c = guap@teacher,
+    type         .tl_set:c = guap@type,
+    type         .initial:n = Отчет~о~лабораторной~работе,
+    number       .tl_set:c = guap@number,
+    title        .tl_set:c = guap@title,
+    course-label .tl_set:c = guap@courselabel,
+    course-label .initial:n = по~курсу:,
+    course       .tl_set:c = guap@course,
+    group        .tl_set:c = guap@group,
+    student      .clist_set:N = \l__guap_students_clist,
+    date         .tl_set:c = guap@date,
+    city         .tl_set:c = guap@city,
+    city         .initial:n = Санкт-Петербург,
+    year         .tl_set:c = guap@year,
+    year         .initial:x = \int_use:N \c_sys_year_int,
+  }
+\NewDocumentCommand \guapsetup { m } { \keys_set:nn { guap } {#1} }
+
+% date = today -> текущая дата ДД.ММ.ГГГГ
+\cs_new:cpn { guap@thedate }
+  {
+    \tl_if_eq:cnTF { guap@date } { today }
+      {
+        \int_compare:nNnT { \c_sys_day_int } < { 10 } { 0 }
+        \int_use:N \c_sys_day_int .
+        \int_compare:nNnT { \c_sys_month_int } < { 10 } { 0 }
+        \int_use:N \c_sys_month_int .
+        \int_use:N \c_sys_year_int
+      }
+      { \use:c { guap@date } }
+  }
+\cs_new_protected:cpn { guap@forstudents } #1
+  { \clist_map_inline:Nn \l__guap_students_clist {#1} }
+\cs_new:cpn { guap@firststudent }
+  { \clist_if_empty:NF \l__guap_students_clist
+      { \clist_item:Nn \l__guap_students_clist { 1 } } }
+\ExplSyntaxOff
+\makeatletter
+
+% ширина по бланку: #1 из 48135 (= вся ширина строки 481,35 pt)
+\newcommand\guap@tw[1]{\dimexpr\textwidth*#1/48135\relax}
+% ячейка с линией под текстом
+\newcommand\guap@cell[2]{%
+  \makebox[#1][c]{#2}\kern-#1\rule[-3.25bp]{#1}{0.5bp}}
+% ячейка подписи под линией
+\newcommand\guap@cap[2]{\makebox[#1][c]{\fontsize{10.0375}{11.5bp}\selectfont#2}}
+% блок: #1 — расстояние от предыдущей базовой линии (glue), #2 — кегль,
+% #3 — интерлиньяж при переносе, #4 — выключка, #5 — текст
+\newcommand\guap@block[5]{%
+  \par\vskip\glueexpr#1-#3\relax
+  \begingroup\fontsize{#2}{#3}\selectfont#4#5\par\endgroup}
+\newcommand\guap@row[2]{%
+  \guap@block{#1}{12.045}{13.8bp}{\noindent}{\makebox[\linewidth][l]{#2}}}
+
+\newcommand{\guaptitlepage}{%
+  \newgeometry{left=30mm,right=10mm,top=20mm,bottom=20mm}%
+  \thispagestyle{empty}%
+  \begingroup
+  \def\baselinestretch{1}%
+  \setlength{\parindent}{0bp}\setlength{\parskip}{0bp}%
+  \setlength{\topskip}{0bp}%
+  \lineskiplimit=-\maxdimen \lineskip=0bp
+  \hbox{}%
+  \guap@block{11.2bp}{12.045}{13.8bp}{\centering}{ГУАП}%
+  \guap@block{37.8bp}{12.045}{13.8bp}{\centering}{КАФЕДРА № \guap@department}%
+  \guap@block{73.8bp}{12.045}{13.8bp}{\raggedright}{ОТЧЕТ\\ЗАЩИЩЕН С ОЦЕНКОЙ}%
+  \guap@block{19.8bp}{12.045}{13.8bp}{\raggedright}{ПРЕПОДАВАТЕЛЬ}%
+  \guap@row{26.7bp}{%
+    \guap@cell{\guap@tw{16175}}{\guap@teacherpost}\hspace{\guap@tw{1420}}%
+    \guap@cell{\guap@tw{14100}}{\guap@thedate}\hspace{\guap@tw{1370}}%
+    \guap@cell{\guap@tw{15070}}{\guap@teacher}}%
+  \guap@block{10.3bp}{10.0375}{11.5bp}{\noindent}{\makebox[\linewidth][l]{%
+    \guap@cap{\guap@tw{16175}}{должность, уч. степень, звание}\hspace{\guap@tw{1420}}%
+    \guap@cap{\guap@tw{14100}}{подпись, дата}\hspace{\guap@tw{1370}}%
+    \guap@cap{\guap@tw{15070}}{инициалы, фамилия}}}%
+  \guap@block{79.0bp minus 30bp}{14.0526}{16.1bp}{\centering}{%
+    \MakeUppercase{\guap@type}\ifx\guap@number\@empty\else\ №\guap@number\fi}%
+  \guap@block{52.1bp}{14.0526}{16.1bp}{\centering}{\MakeUppercase{\guap@title}}%
+  \guap@block{56.2bp}{12.045}{13.8bp}{\centering}{\guap@courselabel}%
+  \guap@block{27.7bp}{14.0526}{16.1bp}{\centering}{\guap@course}%
+  \guap@block{112bp minus 70bp}{12.045}{13.8bp}{\raggedright}{РАБОТУ ВЫПОЛНИЛ}%
+  \def\guap@stskip{26.7bp}%
+  \guap@forstudents{%
+    \guap@row{\guap@stskip}{%
+      \makebox[\guap@tw{10805}][l]{СТУДЕНТ гр. №}%
+      \guap@cell{\guap@tw{8660}}{\guap@group}\hspace{\guap@tw{1190}}%
+      \guap@cell{\guap@tw{13170}}{\guap@thedate}\hspace{\guap@tw{1180}}%
+      \guap@cell{\guap@tw{13130}}{##1}}%
+    \guap@block{10.3bp}{10.0375}{11.5bp}{\noindent}{\makebox[\linewidth][l]{%
+      \hspace{\guap@tw{10805}}\hspace{\guap@tw{8660}}\hspace{\guap@tw{1190}}%
+      \guap@cap{\guap@tw{13170}}{подпись, дата}\hspace{\guap@tw{1180}}%
+      \guap@cap{\guap@tw{13130}}{инициалы, фамилия}}}%
+    \gdef\guap@stskip{26.7bp}}%
+  \guap@block{114.6bp minus 80bp}{12.045}{13.8bp}{\centering}{\guap@city\ \guap@year}%
+  \vfill
+  \endgroup
+  \clearpage
+  \restoregeometry
+  \setcounter{page}{2}% титул считается, но не нумеруется
+}
+\renewcommand{\maketitle}{\guaptitlepage}
+
+\AtBeginDocument{%
+  \hypersetup{pdftitle={\guap@title}, pdfauthor={\guap@firststudent},
+              pdflang={ru-RU}}}
+
+%%---------------------------------------------------------------------
+%% 13. НУМЕРАЦИЯ СТРАНИЦ — внизу по центру, титул не нумеруется
+%%---------------------------------------------------------------------
+\pagestyle{plain}
+
+%%---------------------------------------------------------------------
+%% 14. ССЫЛКИ
+%%---------------------------------------------------------------------
+\RequirePackage{csquotes}
+\RequirePackage[unicode,hidelinks,bookmarksnumbered,
+                pdfencoding=auto]{hyperref}
+\RequirePackage{bookmark}
+\RequirePackage{xurl}
+
+%% Удобные сокращения для ссылок в тексте.
+%% Префикс метки можно не писать: \figref{scheme} = \figref{fig:scheme}
+\newcommand{\guapref}[2]{\@ifundefined{r@#2}{\ref{#1:#2}}{\ref{#2}}}
+\newcommand{\figref}[1]{рисунке~\guapref{fig}{#1}}
+\newcommand{\tabref}[1]{таблице~\guapref{tab}{#1}}
+\newcommand{\lstref}[1]{листинге~\guapref{lst}{#1}}
+\newcommand{\formref}[1]{формуле~(\guapref{eq}{#1})}
+
+%%---------------------------------------------------------------------
+%% 15. БЫСТРЫЕ ВСТАВКИ
+%%  \guapimg[ширина]{файл}{подпись}[метка]   метка по умолчанию fig:имя-файла
+%%  \guapcode[язык]{файл}{подпись}[метка]    метка по умолчанию lst:файл
+%%    файл кода ищется как есть, затем в code/:  \guapcode[Python]{main.py}{...}
+%%---------------------------------------------------------------------
+\ExplSyntaxOn
+\str_new:N \l__guap_dir_str
+\str_new:N \l__guap_name_str
+\str_new:N \l__guap_ext_str
+% метка из имени файла без папки и расширения: images/scheme.png -> fig:scheme
+\cs_new_protected:cpn { guap@autolabel } #1#2
+  {
+    \file_parse_full_name:nNNN {#2}
+      \l__guap_dir_str \l__guap_name_str \l__guap_ext_str
+    \use:x { \exp_not:N \label { #1 : \l__guap_name_str } }
+  }
+\ExplSyntaxOff
+
+\NewDocumentCommand{\guapimg}{O{0.8\textwidth} m m o}{%
+  \begin{figure}[H]
+    \centering
+    \includegraphics[width=#1,height=0.75\textheight,keepaspectratio]{#2}%
+    \caption{#3}%
+    \IfNoValueTF{#4}{\guap@autolabel{fig}{#2}}{\label{#4}}%
+  \end{figure}}
+
+\NewDocumentCommand{\guapcode}{O{} m m o}{%
+  \IfFileExists{#2}{\def\guap@codefile{#2}}{\def\guap@codefile{code/#2}}%
+  \IfNoValueTF{#4}{\def\guap@codelabel{lst:#2}}{\def\guap@codelabel{#4}}%
+  \lstinputlisting[language={#1},caption={#3},label=\guap@codelabel]%
+    {\guap@codefile}}
+
+%%---------------------------------------------------------------------
+%% 16. ФАСАД: ПИШИ ТОЛЬКО ТЕКСТ
+%%  Блочные команды читают строки под собой до ПУСТОЙ строки:
+%%
+%%    \guaptasks                          \guaptable[bench]{Параметры стенда}
+%%    изучить интерфейс                   Параметр  | Значение
+%%    настроить синхронизацию             Процессор | 8 ядер
+%%                                        Память    | 16 ГБ
+%%
+%%  Блок также заканчивается сам, если следующая строка начинается
+%%  с \section, \begin, \end или любой команды \guap...
+%%---------------------------------------------------------------------
+\RequirePackage{xltabular}
+\setlength{\LTcapwidth}{\textwidth}
+
+\newcommand{\guapintro}{\guapsection{Введение}}
+\newcommand{\guapconclusion}{\guapsection{Заключение}}
+
+\ExplSyntaxOn
+\seq_new:N \g__guap_lines_seq
+\tl_new:N \g__guap_then_tl
+\bool_new:N \l__guap_cmd_bool
+\str_new:N \l__guap_cmd_str
+\cs_new_protected:Npn \__guap_eol: { }   % значение активного ^^M внутри блока
+
+%% \guap_read_lines:n {код} — собрать строки в \g__guap_lines_seq и выполнить код
+\cs_new_protected:Npn \guap_read_lines:n #1
+  {
+    \tl_gset:Nn \g__guap_then_tl {#1}
+    \seq_gclear:N \g__guap_lines_seq
+    \group_begin:
+      \char_set_catcode_active:n { 13 }
+      \__guap_lines_start:
+  }
+%% #1 — токены, которые вернуть во входной поток после блока
+\cs_new_protected:Npn \__guap_lines_stop:n #1
+  { \group_end: \tl_use:N \g__guap_then_tl #1 }
+
+%% Активный конец строки нельзя набрать в коде напрямую: \lowercase
+%% превращает активную ~ в активный ^^M.
+\group_begin:
+  \char_set_lccode:nn { `\~ } { 13 }
+  \char_set_catcode_active:N \~
+  \tex_lowercase:D
+    {
+      \group_end:
+      \cs_new_protected:Npn \__guap_lines_start:
+        {
+          \cs_set_eq:NN ~ \__guap_eol:
+          \peek_meaning_remove:NTF \par
+            { \__guap_lines_stop:n { \par } }
+            { \peek_meaning_remove:NTF \__guap_eol: { \__guap_line:w } { \__guap_line:w } }
+        }
+      \cs_new_protected:Npn \__guap_line:w #1 ~
+        { \tl_trim_spaces_apply:nN {#1} \__guap_line:n }
+    }
+
+\cs_new_protected:Npn \__guap_line:n #1
+  {
+    \tl_if_blank:nTF {#1}
+      { \__guap_lines_stop:n { \par } }
+      {
+        \bool_set_false:N \l__guap_cmd_bool
+        \tl_if_head_is_N_type:nT {#1} { \__guap_check_cmd:w #1 \q_stop }
+        \bool_if:NTF \l__guap_cmd_bool
+          { \__guap_lines_stop:n {#1} }
+          {
+            \seq_gput_right:Nn \g__guap_lines_seq {#1}
+            \__guap_line:w
+          }
+      }
+  }
+
+%% строка, начинающаяся с «структурной» команды, завершает блок
+\cs_new_protected:Npn \__guap_check_cmd:w #1 #2 \q_stop
+  {
+    \token_if_cs:NT #1
+      {
+        \str_set:Nx \l__guap_cmd_str { \cs_to_str:N #1 }
+        \exp_args:NV \str_case:nnT \l__guap_cmd_str
+          {
+            { par } { } { begin } { } { end } { } { section } { }
+            { subsection } { } { subsubsection } { } { paragraph } { }
+            { clearpage } { } { newpage } { } { maketitle } { }
+            { printbibliography } { }
+          }
+          { \bool_set_true:N \l__guap_cmd_bool }
+        \exp_args:Nx \str_if_eq:nnT
+          { \str_range:Nnn \l__guap_cmd_str { 1 } { 4 } } { guap }
+          { \bool_set_true:N \l__guap_cmd_bool }
+      }
+  }
+
+%%---------------------------------------------------------------------
+%% Перечисления: ; в конце пунктов и . в конце последнего ставятся сами
+%%---------------------------------------------------------------------
+\bool_new:N \l__guap_punct_bool
+\tl_new:N \l__guap_item_tl
+\regex_const:Nn \c__guap_trail_regex { [\;\.\,] \s* \Z }
+\regex_const:Nn \c__guap_keep_regex { [\?\!\:] \s* \Z }
+
+\cs_new_protected:Npn \__guap_punct:n #1
+  {
+    \bool_if:NT \l__guap_punct_bool
+      {
+        \regex_replace_once:NnN \c__guap_trail_regex { } \l__guap_item_tl
+        \exp_args:NNV \regex_match:NnF \c__guap_keep_regex \l__guap_item_tl
+          {
+            \tl_put_right:Nx \l__guap_item_tl
+              {
+                \int_compare:nNnTF {#1} = { \seq_count:N \g__guap_lines_seq }
+                  { . } { ; }
+              }
+          }
+      }
+  }
+
+%% #1 — окружение, #2 — булево «без пунктуации» (звёздочка)
+\cs_new_protected:Npn \__guap_list:nn #1#2
+  {
+    \seq_if_empty:NF \g__guap_lines_seq
+      {
+        \bool_set:Nn \l__guap_punct_bool { ! #2 }
+        \begin{#1}
+          \seq_map_indexed_function:NN \g__guap_lines_seq \__guap_list_item:nn
+        \end{#1}
+      }
+  }
+\cs_new_protected:Npn \__guap_list_item:nn #1#2
+  {
+    \tl_set:Nn \l__guap_item_tl {#2}
+    \__guap_punct:n {#1}
+    \item \tl_use:N \l__guap_item_tl
+  }
+
+\NewDocumentCommand \guaplist { s }
+  { \guap_read_lines:n { \__guap_list:nn { itemize } {#1} } }
+\NewDocumentCommand \guapenum { s }
+  { \guap_read_lines:n { \__guap_list:nn { gostenum } {#1} } }
+\NewDocumentCommand \guapnum { s }
+  { \guap_read_lines:n { \__guap_list:nn { enumerate } {#1} } }
+\NewDocumentCommand \guaptasks
+  { s O{Для~достижения~поставленной~цели~необходимо~решить~следующие~задачи:} }
+  {
+    \guap_read_lines:n
+      {
+        \tl_if_blank:nF {#2} { \par #2 \par }
+        \__guap_list:nn { gostenum } {#1}
+      }
+  }
+
+%%---------------------------------------------------------------------
+%% Таблица: ячейки через |, первая строка — шапка.
+%% Ширины столбцов подбираются по длине текста, длинная таблица
+%% переносится на следующую страницу с «Продолжение таблицы N».
+%%---------------------------------------------------------------------
+\int_new:N \l__guap_cols_int
+\prop_new:N \l__guap_width_prop
+\seq_new:N \l__guap_cells_seq
+\fp_new:N \l__guap_sum_fp
+\tl_new:N \l__guap_spec_tl
+\tl_new:N \l__guap_head_tl
+\tl_new:N \l__guap_body_tl
+\tl_new:N \l__guap_row_tl
+\tl_new:N \l__guap_table_tl
+
+\cs_new:Npn \__guap_width:n #1
+  { \int_max:nn { 4 } { \int_min:nn { 40 } { \prop_item:Nn \l__guap_width_prop {#1} } } }
+
+\cs_new_protected:Npn \__guap_table_measure:n #1
+  {
+    \seq_set_split:Nnn \l__guap_cells_seq { | } {#1}
+    \int_set:Nn \l__guap_cols_int
+      { \int_max:nn { \l__guap_cols_int } { \seq_count:N \l__guap_cells_seq } }
+    \seq_map_indexed_function:NN \l__guap_cells_seq \__guap_table_measure:nn
+  }
+\cs_new_protected:Npn \__guap_table_measure:nn #1#2
+  {
+    \prop_put:Nnx \l__guap_width_prop {#1}
+      { \int_max:nn { 0 \prop_item:Nn \l__guap_width_prop {#1} } { \str_count:n {#2} } }
+  }
+
+\cs_new_protected:Npn \__guap_table_spec:n #1
+  {
+    \tl_put_right:Nx \l__guap_spec_tl
+      {
+        | > {
+          \exp_not:N \hsize =
+            \fp_eval:n { round ( \l__guap_cols_int * \__guap_width:n {#1} / \l__guap_sum_fp , 4 ) }
+            \exp_not:N \hsize
+          \exp_not:N \linewidth = \exp_not:N \hsize
+          \int_compare:nNnTF {#1} = { 1 }
+            { \exp_not:N \raggedright } { \exp_not:N \centering }
+          \exp_not:N \arraybackslash
+        } X
+        \int_compare:nNnT {#1} = { \l__guap_cols_int } { | }
+      }
+  }
+
+\cs_new_protected:Npn \__guap_table_row:nn #1#2
+  {
+    \seq_set_split:Nnn \l__guap_cells_seq { | } {#2}
+    \tl_clear:N \l__guap_row_tl
+    \int_step_inline:nn { \l__guap_cols_int }
+      {
+        \tl_put_right:Nx \l__guap_row_tl
+          {
+            \int_compare:nNnF {##1} = { 1 } { & }
+            \int_compare:nNnT {#1} = { 1 }
+              { \exp_not:N \centering \exp_not:N \bfseries }
+            \seq_item:Nn \l__guap_cells_seq {##1}
+          }
+      }
+    \tl_put_right:Nn \l__guap_row_tl { \tabularnewline \hline }
+    \int_compare:nNnTF {#1} = { 1 }
+      { \tl_set_eq:NN \l__guap_head_tl \l__guap_row_tl }
+      { \tl_put_right:NV \l__guap_body_tl \l__guap_row_tl }
+  }
+
+%% #1 — метка (без tab:), #2 — название
+\cs_new_protected:Npn \__guap_table:nn #1#2
+  {
+    \seq_if_empty:NF \g__guap_lines_seq
+      {
+        \int_zero:N \l__guap_cols_int
+        \prop_clear:N \l__guap_width_prop
+        \seq_map_function:NN \g__guap_lines_seq \__guap_table_measure:n
+        \fp_zero:N \l__guap_sum_fp
+        \int_step_inline:nn { \l__guap_cols_int }
+          { \fp_add:Nn \l__guap_sum_fp { \__guap_width:n {##1} } }
+        \tl_clear:N \l__guap_spec_tl
+        \int_step_function:nN { \l__guap_cols_int } \__guap_table_spec:n
+        \tl_clear:N \l__guap_head_tl
+        \tl_clear:N \l__guap_body_tl
+        \seq_map_indexed_function:NN \g__guap_lines_seq \__guap_table_row:nn
+        \tl_set:Nx \l__guap_table_tl
+          {
+            \exp_not:N \begin{xltabular}{\exp_not:N \textwidth}{\exp_not:V \l__guap_spec_tl}
+            \exp_not:N \caption{\exp_not:n {#2}}
+            \tl_if_blank:nF {#1} { \exp_not:N \label{tab:\exp_not:n {#1}} }
+            \exp_not:N \tabularnewline
+            \exp_not:N \hline
+            \exp_not:V \l__guap_head_tl
+            \exp_not:N \endfirsthead
+            \exp_not:N \multicolumn{\int_use:N \l__guap_cols_int}{@{}l}
+              {Продолжение~таблицы~\exp_not:N \thetable}
+            \exp_not:N \tabularnewline
+            \exp_not:N \hline
+            \exp_not:V \l__guap_head_tl
+            \exp_not:N \endhead
+            \exp_not:V \l__guap_body_tl
+            \exp_not:N \end{xltabular}
+          }
+        \tl_use:N \l__guap_table_tl
+      }
+  }
+
+\NewDocumentCommand \guaptable { O{} m }
+  { \guap_read_lines:n { \__guap_table:nn {#1} {#2} } }
+
+%%---------------------------------------------------------------------
+%% Формула с пояснениями «где ...»: строки «обозначение | смысл»
+%%---------------------------------------------------------------------
+\box_new:N \l__guap_where_box
+\tl_new:N \l__guap_sym_tl
+
+\cs_new_protected:Npn \__guap_where_item:nn #1#2
+  {
+    \seq_set_split:Nnn \l__guap_cells_seq { | } {#2}
+    \int_compare:nNnTF { \seq_count:N \l__guap_cells_seq } > { 1 }
+      {
+        \seq_pop_left:NN \l__guap_cells_seq \l__guap_sym_tl
+        \tl_if_in:NnF \l__guap_sym_tl { $ }
+          { \tl_set:Nx \l__guap_sym_tl { $ \exp_not:V \l__guap_sym_tl $ } }
+        \tl_set:Nx \l__guap_item_tl
+          {
+            \exp_not:V \l__guap_sym_tl
+            \exp_not:N \nobreakspace \exp_not:N \textemdash \c_space_tl
+            \seq_use:Nn \l__guap_cells_seq { | }
+          }
+      }
+      { \tl_set:Nn \l__guap_item_tl {#2} }
+    \__guap_punct:n {#1}
+    \par \noindent
+    \hangindent = \box_wd:N \l__guap_where_box
+    \hangafter = 1 \scan_stop:
+    \int_compare:nNnTF {#1} = { 1 }
+      { \box_use:N \l__guap_where_box }
+      { \skip_horizontal:n { \box_wd:N \l__guap_where_box } }
+    \tl_use:N \l__guap_item_tl
+  }
+
+\cs_new_protected:Npn \__guap_eq:nn #1#2
+  {
+    \begin{equation}
+      #2
+      \tl_if_blank:nF {#1} { \label{eq:#1} }
+    \end{equation}
+    \seq_if_empty:NF \g__guap_lines_seq
+      {
+        \hbox_set:Nn \l__guap_where_box { где \c_space_tl }
+        \bool_set_true:N \l__guap_punct_bool
+        \seq_map_indexed_function:NN \g__guap_lines_seq \__guap_where_item:nn
+        \par
+      }
+  }
+
+\NewDocumentCommand \guapeq { O{} m }
+  { \guap_read_lines:n { \__guap_eq:nn {#1} {#2} } }
+
+%%---------------------------------------------------------------------
+%% Список источников: строки под командой — источники по порядку.
+%% Пустая строка сразу после команды — берётся biblatex (\printbibliography).
+%%---------------------------------------------------------------------
+\cs_new_protected:Npn \__guap_sources:
+  {
+    \guapsection { Список~использованных~источников }
+    \seq_if_empty:NTF \g__guap_lines_seq
+      { \cs_if_exist:NT \printbibliography { \printbibliography [ heading = none ] } }
+      {
+        \begin{enumerate} [ label = \arabic*. , wide = \parindent ]
+          \seq_map_inline:Nn \g__guap_lines_seq { \item ##1 }
+        \end{enumerate}
+      }
+  }
+\NewDocumentCommand \guapsources { }
+  { \guap_read_lines:n { \__guap_sources: } }
+
+%%---------------------------------------------------------------------
+%% Листинг в тексте:
+%%   \begin{code}[Python]{Подпись} ... \end{code}
+%%   \begin{code}[Python, main]{Подпись}   — с меткой lst:main
+%%   \begin{code}[language=C, firstnumber=10]{Подпись} — любые ключи listings
+%%---------------------------------------------------------------------
+\int_new:N \l__guap_code_int
+\cs_new_protected:cpn { guap@codeopts } #1#2
+  {
+    \int_zero:N \l__guap_code_int
+    \clist_map_inline:nn {#1}
+      {
+        \tl_if_in:nnTF {##1} { = }
+          { \lstset {##1} }
+          {
+            \int_incr:N \l__guap_code_int
+            \int_case:nn { \l__guap_code_int }
+              {
+                { 1 } { \lstset { language = {##1} } }
+                { 2 } { \lstset { label = { lst:##1 } } }
+              }
+          }
+      }
+    \lstset { caption = {#2} }
+  }
+\ExplSyntaxOff
+
+\lstnewenvironment{code}[2][]{\guap@codeopts{#1}{#2}}{}
+
+\endinput

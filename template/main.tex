@@ -1,0 +1,41 @@
+% !TeX program = xelatex
+% Блочная команда (\guaptasks, \guaplist, \guaptable, \guapeq, \guapsources)
+% читает строки под собой до пустой строки. Справка: README шаблона.
+\documentclass[a4paper,14pt]{extarticle}
+\usepackage{guap}
+
+\guapsetup{
+  department   = 41,
+  teacher-post = Ассистент,
+  teacher      = И. И. Иванов,
+  type         = Отчет о лабораторной работе,
+  number       = 1,
+  title        = Название работы,
+  course       = Название дисциплины,
+  group        = 4414,
+  student      = И. И. Студентов,
+  date         = today,
+}
+
+\begin{document}
+
+\maketitle
+\guaptoc
+
+\guapintro
+
+Цель работы —
+
+\guaptasks
+первая задача
+вторая задача
+
+\section{Ход работы}
+
+
+
+\guapconclusion
+
+В ходе работы
+
+\end{document}

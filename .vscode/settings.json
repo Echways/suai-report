@@ -1,0 +1,35 @@
+{
+  // Сборка через latexmk с настройками из .latexmkrc (XeLaTeX, Biber, build/)
+  "latex-workshop.latex.recipes": [
+    { "name": "ГУАП (latexmk)", "tools": ["guap-latexmk"] }
+  ],
+  "latex-workshop.latex.tools": [
+    { "name": "guap-latexmk", "command": "latexmk", "args": ["%DOC_EXT%"] }
+  ],
+  "latex-workshop.latex.recipe.default": "first",
+  "latex-workshop.latex.rootFile.doNotPrompt": true,
+  "latex-workshop.latex.search.rootFiles.include": ["**/main.tex"],
+  "latex-workshop.latex.outDir": "%DIR%/build",
+
+  // Живой предпросмотр: автосохранение -> пересборка -> PDF во вкладке справа
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1200,
+  "latex-workshop.latex.autoBuild.run": "onSave",
+  "latex-workshop.latex.autoBuild.interval": 1500,
+  "latex-workshop.view.pdf.viewer": "tab",
+  "latex-workshop.view.pdf.tab.editorGroup": "right",
+  "latex-workshop.synctex.afterBuild.enabled": true,
+  "latex-workshop.view.pdf.zoom": "page-width",
+
+  // Без всплывашек: ошибки видны в панели Problems
+  "latex-workshop.latex.autoClean.run": "never",
+  "latex-workshop.message.error.show": false,
+  "latex-workshop.message.warning.show": false,
+  "latex-workshop.message.badbox.show": "none",
+
+  "files.exclude": { "**/build": true },
+  "[latex]": {
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": { "other": true, "comments": false, "strings": false }
+  }
+}
