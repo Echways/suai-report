@@ -2,7 +2,8 @@
 #  make                   собрать демо-отчёт demo/main.pdf
 #  make watch             пересобирать демо при сохранении, в том числе src/guap.sty
 #  make open              собрать и открыть демо
-#  make check             собрать демо и свежую заготовку (как CI)
+#  make test              тесты команды guap (без TeX)
+#  make check             тесты, демо и свежая заготовка (как CI)
 #  make clean             удалить сборку демо
 #  make new DIR=../lab-2  новый отчёт (TITLE="..." — сразу с названием)
 #
@@ -11,7 +12,7 @@
 GUAP = python3 scripts/guap.py
 TITLE_ARG = $(if $(TITLE),--title "$(TITLE)")
 
-.PHONY: pdf watch open check clean new install uninstall
+.PHONY: pdf watch open test check clean new install uninstall
 
 pdf:
 	@$(GUAP) build demo
@@ -22,7 +23,10 @@ watch:
 open:
 	@$(GUAP) open demo
 
-check: pdf
+test:
+	@python3 -m unittest discover -s tests
+
+check: test pdf
 	@tmp=$$(mktemp -d) && trap 'rm -rf "$$tmp"' EXIT && \
 	  $(GUAP) new "$$tmp/lab-1" --no-open --title "Проверка" >/dev/null && \
 	  $(GUAP) build "$$tmp/lab-1" && echo "check: демо и заготовка собираются"

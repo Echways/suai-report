@@ -69,9 +69,10 @@ src/template.tex      заготовка main.tex
 src/vscode/           настройки VS Code: сборка, предпросмотр, сниппеты
 demo/                 демо-отчёт со всеми возможностями
 scripts/guap.py       команда guap
-Makefile              make install, сборка демо, make check
+tests/                тесты команды guap (make test)
+Makefile              make install, сборка демо, make test, make check
 .vscode -> src/vscode симлинк, чтобы в самом репозитории работало то же
-.github/workflows/    CI собирает демо-отчёт и свежую заготовку
+.github/workflows/    CI: тесты, затем guap build демо-отчёта и свежей заготовки
 ```
 
 - `guap.sty` ставится в `~/texmf` симлинком, поэтому правка `src/guap.sty`
@@ -87,7 +88,8 @@ Makefile              make install, сборка демо, make check
 
 ```bash
 make watch     # демо пересобирается при сохранении main.tex и src/guap.sty
-make check     # перед коммитом: собрать демо и свежую заготовку, как в CI
+make test      # тесты команды guap, TeX не нужен
+make check     # перед коммитом: тесты, демо и свежая заготовка, как в CI
 ```
 
 В корне шаблона для демо есть `make`, `make open`, `make clean`, а также
