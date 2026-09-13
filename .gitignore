@@ -1,4 +1,5 @@
 build/
 main.pdf
-*.zip
 /ci/
+__pycache__/
+.vscode/

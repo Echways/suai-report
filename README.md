@@ -9,6 +9,16 @@
 
 ## Быстрый старт
 
+Один раз после клонирования:
+
+```bash
+make install   # guap.sty -> ~/texmf, команда guap -> ~/.local/bin
+```
+
+`guap.sty` ставится симлинком на этот репозиторий, поэтому правки шаблона
+и `git pull` сразу действуют во всех отчётах. В папке отчёта остаются
+только `main.tex`, `images/` и `.vscode/`.
+
 ```bash
 make new DIR=../3rdcourse/1term/cloudtech/lab-4 TITLE="Настройка S3"
 ```
@@ -25,7 +35,7 @@ make new DIR=../3rdcourse/1term/cloudtech/lab-4 TITLE="Настройка S3"
 Следующая лаба делается ещё проще. В папке `lab-4` выполни:
 
 ```bash
-make next            # создаст ../lab-5 с тем же титулом
+guap next            # создаст ../lab-5 с тем же титулом
 ```
 
 - **Ctrl+клик** по месту в PDF переходит к строке в `.tex`, **Ctrl+Alt+J**
@@ -37,41 +47,52 @@ make next            # создаст ../lab-5 с тем же титулом
 
 ## Команды
 
-Работают в любом созданном отчёте. В корне шаблона есть `make`, `watch`,
-`open`, `clean` (для демо-отчёта) и `make new`.
+В любой папке отчёта (или с путём: `guap build ../lab-4`).
 
 | Команда | Что делает |
 | --- | --- |
-| `make` | собрать `main.pdf` |
-| `make watch` | пересобирать при каждом сохранении |
-| `make open` | собрать и открыть PDF |
-| `make clean` | удалить `build/` и PDF |
-| `make zip` | собрать `overleaf.zip` (в Overleaf выбрать компилятор XeLaTeX) |
-| `make new DIR=… [TITLE="…"]` | новый отчёт |
-| `make next [TITLE="…"]` | следующий отчёт рядом: `lab-3` → `lab-4` |
-| `make update` | подтянуть в отчёт свежий `guap.sty`, Makefile и настройки VS Code |
+| `guap build` | собрать `main.pdf` |
+| `guap watch` | пересобирать при каждом сохранении |
+| `guap open` | собрать и открыть PDF |
+| `guap clean` | удалить `build/` и PDF |
+| `guap new DIR [--title "…"]` | новый отчёт |
+| `guap next [--title "…"]` | следующий отчёт рядом: `lab-3` → `lab-4` |
+| `guap update` | обновить `.vscode/` в отчёте из шаблона |
 
 ## Устройство
 
+Всё, что попадает в отчёты, лежит в `src/`. Больше править негде.
+
 ```text
-template/             всё, из чего собирается новый отчёт
-  guap.sty            оформление по ГОСТ, титульный лист, команды \guap…
-  main.tex            заготовка main.tex
-  Makefile            make, watch, zip, next, update в отчёте
-  .latexmkrc          сборка: XeLaTeX + Biber, служебное в build/
-demo/                 демо-отчёт со всеми возможностями (guap.sty берёт из template/)
-scripts/report.py     make new / next / update
-Makefile              сборка демо и make new
-.vscode/              автосборка, предпросмотр, сниппеты (общие с отчётами)
+src/guap.sty          оформление по ГОСТ, титульный лист, команды \guap…
+src/template.tex      заготовка main.tex
+src/vscode/           настройки VS Code: сборка, предпросмотр, сниппеты
+demo/                 демо-отчёт со всеми возможностями
+scripts/guap.py       команда guap
+Makefile              make install, сборка демо, make check
+.vscode -> src/vscode симлинк, чтобы в самом репозитории работало то же
 .github/workflows/    CI собирает демо-отчёт и свежую заготовку
 ```
 
-В отчёт копируются `guap.sty`, `.latexmkrc`, `Makefile` из `template/`
-и `.vscode/`.
-Поэтому отчёт самодостаточен: его можно перенести, заархивировать или
-собрать в Overleaf. **`guap.sty` в отчёте не правь.** Все настройки
-делаются в преамбуле `main.tex` (см. ниже), и тогда `make update`
-ничего не сломает.
+- `guap.sty` ставится в `~/texmf` симлинком, поэтому правка `src/guap.sty`
+  или `git pull` сразу действует во всех отчётах.
+- `src/vscode/` копируется в `.vscode/` отчёта при `guap new`. В старые
+  отчёты новые настройки и сниппеты попадают после `guap update`.
+- Сборка описана один раз, в `src/vscode/settings.json` (аргументы latexmk:
+  XeLaTeX + Biber, служебное в `build/`). Её используют и VS Code, и `guap build`.
+- Нужен только XeLaTeX. Overleaf и LuaLaTeX не поддерживаются.
+- Все настройки оформления отчёта пишутся в преамбуле `main.tex` (см. ниже).
+
+### Правка шаблона
+
+```bash
+make watch     # демо пересобирается при сохранении main.tex и src/guap.sty
+make check     # перед коммитом: собрать демо и свежую заготовку, как в CI
+```
+
+В корне шаблона для демо есть `make`, `make open`, `make clean`, а также
+`make new DIR=…` и `make install` (после переноса репозитория его нужно
+повторить).
 
 ## Титульный лист
 
@@ -202,8 +223,8 @@ Obsidian Help. URL: https://help.obsidian.md (дата обращения: 12.09
 | `\guapintro`, `\guapconclusion` | | введение, заключение |
 
 В `.tex` подсказку принимает только Tab, а Enter всегда переносит строку.
-Слова из текста не подсказываются. Это настроено в `.vscode/settings.json`
-(секция `[latex]`), в старые отчёты настройки попадут после `make update`.
+Слова из текста не подсказываются. Это настроено в `src/vscode/settings.json`
+(секция `[latex]`), в старые отчёты настройки попадут после `guap update`.
 
 ## Настройка под методичку
 
@@ -218,7 +239,7 @@ Obsidian Help. URL: https://help.obsidian.md (дата обращения: 12.09
 | Цветные листинги | `\lstset{style=gostcolor}` |
 
 Автосохранение в VS Code отключается удалением `files.autoSave`
-из `.vscode/settings.json`.
+из `src/vscode/settings.json` (и `guap update` в отчётах).
 
 ### Источники через biblatex
 

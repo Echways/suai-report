@@ -10,6 +10,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # В CI нет ~/texmf: кладём guap.sty рядом с main.tex
+      - run: |
+          python3 scripts/guap.py new ci/lab-1 --no-open --title "Проверка"
+          cp src/guap.sty demo/ && cp src/guap.sty ci/lab-1/
+
       # Демо-отчёт
       - uses: xu-cheng/latex-action@v3
         with:
@@ -18,7 +23,6 @@ jobs:
           latexmk_use_xelatex: true
 
       # Заготовка, созданная генератором, тоже должна собираться
-      - run: python3 scripts/report.py new ci/lab-1 --no-open --title "Проверка"
       - uses: xu-cheng/latex-action@v3
         with:
           root_file: main.tex
