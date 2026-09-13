@@ -28,8 +28,16 @@
   "latex-workshop.message.badbox.show": "none",
 
   "files.exclude": { "**/build": true },
+  // Сниппеты ГУАП: \guapta + Tab. Enter всегда даёт новую строку, подсказку
+  // принимает только Tab. Слова из текста не подсказываются, иначе они
+  // забивают список и перехватывают Tab при заполнении ячеек таблицы.
   "[latex]": {
     "editor.wordWrap": "on",
-    "editor.quickSuggestions": { "other": true, "comments": false, "strings": false }
+    "editor.quickSuggestions": { "other": true, "comments": false, "strings": false },
+    "editor.snippetSuggestions": "top",
+    "editor.tabCompletion": "onlySnippets",
+    "editor.acceptSuggestionOnEnter": "off",
+    "editor.wordBasedSuggestions": "off",
+    "editor.suggest.snippetsPreventQuickSuggestions": true
   }
 }
