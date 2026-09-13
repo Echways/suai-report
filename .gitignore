@@ -1,5 +1,6 @@
 build/
 main.pdf
 /ci/
+/dist/
 __pycache__/
 .vscode/

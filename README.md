@@ -69,10 +69,12 @@ src/template.tex      заготовка main.tex
 src/vscode/           настройки VS Code: сборка, предпросмотр, сниппеты
 demo/                 демо-отчёт со всеми возможностями
 scripts/guap.py       команда guap
-tests/                тесты команды guap (make test)
+scripts/ctan.py       архив для CTAN, проверка версии, загрузка
+ctan/                 README и метаданные пакета на CTAN
+tests/                тесты команд guap и ctan.py (make test)
 Makefile              make install, сборка демо, make test, make check
 .vscode -> src/vscode симлинк, чтобы в самом репозитории работало то же
-.github/workflows/    CI: тесты, затем guap build демо-отчёта и свежей заготовки
+.github/workflows/    CI: тесты и сборка (build.yml), выпуск на CTAN (release.yml)
 ```
 
 - `guap.sty` ставится в `~/texmf` симлинком, поэтому правка `src/guap.sty`
@@ -95,6 +97,33 @@ make check     # перед коммитом: тесты, демо и свежа
 В корне шаблона для демо есть `make`, `make open`, `make clean`, а также
 `make new DIR=…` и `make install` (после переноса репозитория его нужно
 повторить).
+
+### Выпуск на CTAN
+
+На CTAN уходят `guap.sty`, заготовка, демо-отчёт с PDF и `ctan/README.md`.
+Команда `guap` и настройки VS Code остаются только в репозитории.
+
+```bash
+# изменения описаны в CHANGELOG.md под «## Unreleased» и закоммичены
+make release VERSION=2.1   # версия и дата в guap.sty, раздел в CHANGELOG, коммит, тег v2.1
+git push --follow-tags
+```
+
+Дальше работает `release.yml`: проверки как в CI, сверка тега с
+`guap.sty`, `make ctan` и проверка архива через API CTAN. Потом workflow
+ждёт **Approve** в Actions (environment `ctan`), загружает пакет на CTAN
+и создаёт GitHub Release. После загрузки модераторы CTAN проверяют пакет
+вручную, обычно это занимает 1–2 дня. Если в разделе версии в CHANGELOG
+есть строка `<!-- announce -->`, текст раздела уходит в рассылку CTAN.
+
+`make ctan` собирает `dist/guap.zip` локально. **Run workflow** на
+вкладке Actions запускает только проверку на CTAN, без загрузки.
+
+Один раз в настройках GitHub-репозитория:
+
+- **Secrets → Actions:** `CTAN_EMAIL` — email, с которым пакет
+  зарегистрирован на CTAN.
+- **Environments → `ctan`:** включить *Required reviewers* и добавить себя.
 
 ## Титульный лист
 

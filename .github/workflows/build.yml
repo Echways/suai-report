@@ -2,7 +2,9 @@ name: build
 
 on:
   push:
+    branches: ["**"]   # теги проверяет release.yml, вызывая этот же workflow
   pull_request:
+  workflow_call:
 
 jobs:
   # Логика команды guap, TeX не нужен

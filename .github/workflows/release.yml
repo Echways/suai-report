@@ -1,0 +1,113 @@
+name: release
+
+# Тег vX.Y (make release VERSION=X.Y && git push --follow-tags):
+#   проверки build.yml → архив и проверка на CTAN → подтверждение
+#   в environment «ctan» → загрузка на CTAN → GitHub Release.
+# Ручной запуск (Run workflow) доходит только до проверки на CTAN.
+#
+# Настройка репозитория, один раз:
+#   Settings → Secrets → Actions: CTAN_EMAIL — email сопровождающего на CTAN
+#   Settings → Environments → ctan: Required reviewers — ты сам
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    uses: ./.github/workflows/build.yml
+
+  package:
+    needs: checks
+    runs-on: ubuntu-latest
+    outputs:
+      published: ${{ steps.published.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Тег совпадает с версией
+        if: github.ref_type == 'tag'
+        run: python3 scripts/ctan.py check-tag "$GITHUB_REF_NAME"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: pdf
+
+      - name: Архив
+        run: python3 scripts/ctan.py package
+
+      - name: Проверка на CTAN
+        env:
+          CTAN_EMAIL: ${{ secrets.CTAN_EMAIL }}
+        run: python3 scripts/ctan.py validate
+
+      - name: Эта версия уже на CTAN?
+        id: published
+        run: echo "value=$(python3 scripts/ctan.py published)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ctan
+          path: dist/guap.zip
+          if-no-files-found: error
+
+  upload:
+    needs: package
+    if: github.ref_type == 'tag' && needs.package.outputs.published == 'no'
+    runs-on: ubuntu-latest
+    environment:
+      name: ctan
+      url: https://ctan.org/pkg/guap
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/download-artifact@v4
+        with:
+          name: ctan
+          path: dist
+      - name: Загрузка на CTAN
+        env:
+          CTAN_EMAIL: ${{ secrets.CTAN_EMAIL }}
+        run: python3 scripts/ctan.py upload
+
+  # Перезапуск тега, который уже на CTAN, пропускает upload, но Release делает
+  release:
+    needs: [package, upload]
+    if: >-
+      always() && github.ref_type == 'tag'
+      && needs.package.result == 'success'
+      && (needs.upload.result == 'success' || needs.upload.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ctan
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: pdf
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/ctan.py notes > notes.md
+          cp demo/main.pdf dist/guap-demo.pdf
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/guap.zip dist/guap-demo.pdf --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/guap.zip dist/guap-demo.pdf \
+              --title "guap $GITHUB_REF_NAME" --notes-file notes.md
+          fi

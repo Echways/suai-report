@@ -6,13 +6,15 @@
 #  make check             тесты, демо и свежая заготовка (как CI)
 #  make clean             удалить сборку демо
 #  make new DIR=../lab-2  новый отчёт (TITLE="..." — сразу с названием)
+#  make ctan              архив для CTAN: dist/guap.zip
+#  make release VERSION=2.1  версия в guap.sty и CHANGELOG, коммит и тег v2.1
 #
 #  Всё, что правится, лежит в src/. В отчётах Makefile нет: там команда guap.
 
 GUAP = python3 scripts/guap.py
 TITLE_ARG = $(if $(TITLE),--title "$(TITLE)")
 
-.PHONY: pdf watch open test check clean new install uninstall
+.PHONY: pdf watch open test check clean new install uninstall ctan release
 
 pdf:
 	@$(GUAP) build demo
@@ -43,3 +45,15 @@ install:
 
 uninstall:
 	@$(GUAP) uninstall
+
+ctan: pdf
+	@python3 scripts/ctan.py package
+
+# Тег уходит в GitHub только после git push --follow-tags,
+# дальше CTAN-загрузка ждёт подтверждения в Actions
+release:
+	@test -n "$(VERSION)" || { echo "Укажи версию: make release VERSION=2.1"; exit 1; }
+	@python3 scripts/ctan.py release "$(VERSION)"
+	@git commit -q -am "release v$(VERSION)"
+	@git tag -a "v$(VERSION)" -m "guap v$(VERSION)"
+	@echo "Тег v$(VERSION) создан. Отправка: git push --follow-tags"
