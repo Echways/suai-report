@@ -14,5 +14,5 @@ First release on CTAN.
 - Title page matching the official SUAI form.
 - GOST 7.32-2017 layout: headings, table of contents, captions, tables,
   figures, equations, listings, appendices, list of sources.
-- Line-based block commands: `\guaptasks`, `\guaplist`, `\guapenum`,
-  `\guapnum`, `\guaptable`, `\guapeq`, `\guapsources`.
+- Line-based block commands: `\suaitasks`, `\suailist`, `\suaienum`,
+  `\suainum`, `\suaitable`, `\suaieq`, `\suaisources`.

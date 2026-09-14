@@ -56,7 +56,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ctan
-          path: dist/guap.zip
+          path: dist/suai-report.zip
           if-no-files-found: error
 
   upload:
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ctan
-      url: https://ctan.org/pkg/guap
+      url: https://ctan.org/pkg/suai-report
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -104,10 +104,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 scripts/ctan.py notes > notes.md
-          cp demo/main.pdf dist/guap-demo.pdf
+          cp demo/main.pdf dist/suai-report-demo.pdf
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" dist/guap.zip dist/guap-demo.pdf --clobber
+            gh release upload "$GITHUB_REF_NAME" dist/suai-report.zip dist/suai-report-demo.pdf --clobber
           else
-            gh release create "$GITHUB_REF_NAME" dist/guap.zip dist/guap-demo.pdf \
-              --title "guap $GITHUB_REF_NAME" --notes-file notes.md
+            gh release create "$GITHUB_REF_NAME" dist/suai-report.zip dist/suai-report-demo.pdf \
+              --title "suai-report $GITHUB_REF_NAME" --notes-file notes.md
           fi

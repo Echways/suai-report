@@ -1,6 +1,6 @@
-# guap — SUAI reports following GOST 7.32-2017
+# suai-report — SUAI reports following GOST 7.32-2017
 
-The `guap` package typesets student reports (lab works, coursework,
+The `suai-report` package typesets student reports (lab works, coursework,
 practice reports) for Saint Petersburg State University of Aerospace
 Instrumentation (SUAI, ГУАП) according to GOST 7.32-2017 and GOST 2.105-2019.
 
@@ -9,7 +9,7 @@ Instrumentation (SUAI, ГУАП) according to GOST 7.32-2017 and GOST 2.105-2019
   equations, listings, appendices and the list of sources follow the
   standard without any configuration.
 - Line-based block commands keep the source short: every line below
-  `\guaptasks`, `\guaptable`, `\guapeq` or `\guapsources` becomes a list
+  `\suaitasks`, `\suaitable`, `\suaieq` or `\suaisources` becomes a list
   item, a table row or an explanation of a symbol.
 
 The package requires XeLaTeX. Times New Roman, Liberation Sans and
@@ -20,18 +20,18 @@ and Cursor.
 
 | File | Contents |
 | --- | --- |
-| `guap.sty` | the package |
-| `guap-template.tex` | an empty report to start from |
-| `guap-demo.tex`, `guap-demo.pdf` | a report showing every feature (in Russian) |
+| `suai-report.sty` | the package |
+| `suai-report-template.tex` | an empty report to start from |
+| `suai-report-demo.tex`, `suai-report-demo.pdf` | a report showing every feature (in Russian) |
 | `images/scheme.png` | a picture used by the demo |
 
 ## Usage
 
 ```latex
 \documentclass[a4paper,14pt]{extarticle}
-\usepackage{guap}
+\usepackage{suai-report}
 
-\guapsetup{
+\suaisetup{
   department = 41,
   teacher    = И. И. Иванов,
   type       = Отчет о лабораторной работе,
@@ -45,14 +45,14 @@ and Cursor.
 
 \begin{document}
 \maketitle
-\guaptoc
+\suaitoc
 ...
 \end{document}
 ```
 
 Compile with `latexmk -xelatex` (add `biber` if you use biblatex).
 
-Full documentation (in Russian), the `guap` command-line tool that creates
+Full documentation (in Russian), the `suai` command-line tool that creates
 and builds reports, and VS Code settings with snippets are in the
 repository: https://github.com/Echways/suai-report
 
@@ -60,8 +60,8 @@ repository: https://github.com/Echways/suai-report
 
 Шаблон отчёта ГУАП по ГОСТ 7.32-2017 на XeLaTeX: титульный лист по
 официальному бланку, оформление ставится само, в `main.tex` пишется только
-текст. Пример — `guap-demo.tex` и `guap-demo.pdf`, заготовка —
-`guap-template.tex`. Полное описание, команда `guap` и настройки VS Code —
+текст. Пример — `suai-report-demo.tex` и `suai-report-demo.pdf`, заготовка —
+`suai-report-template.tex`. Полное описание, команда `suai` и настройки VS Code —
 в репозитории по ссылке выше.
 
 ## License

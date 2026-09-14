@@ -1,22 +1,22 @@
 %%=====================================================================
-%%  guap.sty — отчёт ГУАП по ГОСТ 7.32-2017 / ГОСТ 2.105-2019
+%%  suai-report.sty — отчёт ГУАП по ГОСТ 7.32-2017 / ГОСТ 2.105-2019
 %%
-%%  Только XeLaTeX. Собирается командой guap build или из VS Code
+%%  Только XeLaTeX. Собирается командой suai build или из VS Code
 %%  (аргументы latexmk — в src/vscode/settings.json), в ~/texmf ставится
 %%  симлинком через make install. Настройки под методичку пишутся
 %%  в преамбуле main.tex, этот файл в отчётах не копируется.
 %%
-%%   1. Пакеты                     9. Ссылки, \guapimg, \guapcode
+%%   1. Пакеты                     9. Ссылки, \suaiimg, \suaicode
 %%   2. Шрифты                    10. Блочные команды: чтение строк
-%%   3. Страница и абзац          11. \guaplist, \guapenum, \guaptasks
-%%   4. Заголовки и содержание    12. \guaptable
-%%   5. Подписи, таблицы, списки  13. \guapeq
-%%   6. Листинги                  14. \guapsources
+%%   3. Страница и абзац          11. \suailist, \suaienum, \suaitasks
+%%   4. Заголовки и содержание    12. \suaitable
+%%   5. Подписи, таблицы, списки  13. \suaieq
+%%   6. Листинги                  14. \suaisources
 %%   7. Приложения                15. Окружение code
 %%   8. Титульный лист
 %%=====================================================================
 \NeedsTeXFormat{LaTeX2e}[2021/11/15]
-\ProvidesPackage{guap}[2026/09/14 v2.0 GUAP GOST 7.32-2017 report]
+\ProvidesPackage{suai-report}[2026/09/14 v2.0 SUAI GOST 7.32-2017 report]
 
 \RequirePackage{iftex}
 \RequireXeTeX
@@ -43,19 +43,19 @@
 %%  Без него (например, в CI) берётся метрически совместимый TeX Gyre.
 %%---------------------------------------------------------------------
 \ExplSyntaxOn
-\cs_new_protected:Npn \__guap_font:nnnn #1#2#3#4
+\cs_new_protected:Npn \__suai_font:nnnn #1#2#3#4
   {
     \IfFontExistsTF {#2}
       { #1 {#2} [#4] }
       {
-        \msg_warning:nnnn { guap } { font } {#2} {#3}
+        \msg_warning:nnnn { suai } { font } {#2} {#3}
         #1 {#3} [#4]
       }
   }
-\msg_new:nnn { guap } { font } { Шрифт~'#1'~не~найден,~используется~'#2' }
-\__guap_font:nnnn \setmainfont { Times~New~Roman } { TeX~Gyre~Termes } { }
-\__guap_font:nnnn \setsansfont { Liberation~Sans } { TeX~Gyre~Heros } { }
-\__guap_font:nnnn \setmonofont { Liberation~Mono } { TeX~Gyre~Cursor }
+\msg_new:nnn { suai } { font } { Шрифт~'#1'~не~найден,~используется~'#2' }
+\__suai_font:nnnn \setmainfont { Times~New~Roman } { TeX~Gyre~Termes } { }
+\__suai_font:nnnn \setsansfont { Liberation~Sans } { TeX~Gyre~Heros } { }
+\__suai_font:nnnn \setmonofont { Liberation~Mono } { TeX~Gyre~Cursor }
   { Scale = MatchLowercase }
 \ExplSyntaxOff
 
@@ -78,36 +78,36 @@
 %%  Структурные элементы (СОДЕРЖАНИЕ, ВВЕДЕНИЕ, ...) — по центру,
 %%  прописными, с новой страницы. Разделы — с абзацного отступа,
 %%  полужирным, без точки. Без полужирного:
-%%    \renewcommand{\guapheadfont}{\normalfont\fontsize{14}{17}\selectfont}
+%%    \renewcommand{\suaiheadfont}{\normalfont\fontsize{14}{17}\selectfont}
 %%---------------------------------------------------------------------
-\newcommand{\guapheadfont}{\normalfont\fontsize{14}{17}\selectfont\bfseries}
+\newcommand{\suaiheadfont}{\normalfont\fontsize{14}{17}\selectfont\bfseries}
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{3}
 
 % отступ — внутри метки: \raggedright обнуляет \leftskip из \titlespacing
 \titleformat{\section}[block]
-  {\guapheadfont\raggedright}{\hspace*{\parindent}\thesection}{0.6em}{}
+  {\suaiheadfont\raggedright}{\hspace*{\parindent}\thesection}{0.6em}{}
 \titleformat{\subsection}[block]
-  {\guapheadfont\raggedright}{\hspace*{\parindent}\thesubsection}{0.6em}{}
+  {\suaiheadfont\raggedright}{\hspace*{\parindent}\thesubsection}{0.6em}{}
 \titleformat{\subsubsection}[block]
-  {\guapheadfont\raggedright}{\hspace*{\parindent}\thesubsubsection}{0.6em}{}
+  {\suaiheadfont\raggedright}{\hspace*{\parindent}\thesubsubsection}{0.6em}{}
 \titleformat{name=\section,numberless}[block]
-  {\guapheadfont\filcenter}{}{0pt}{\MakeUppercase}
+  {\suaiheadfont\filcenter}{}{0pt}{\MakeUppercase}
 \titlespacing{\section}{0pt}{0pt}{14pt}
 \titlespacing{name=\section,numberless}{0pt}{0pt}{14pt}
 \titlespacing{\subsection}{0pt}{14pt}{14pt}
 \titlespacing{\subsubsection}{0pt}{14pt}{14pt}
 \newcommand{\sectionbreak}{\clearpage}
 
-\newcommand{\guapsection}[1]{%
+\newcommand{\suaisection}[1]{%
   \clearpage
   \phantomsection
   \section*{#1}%
   \addcontentsline{toc}{section}{\texorpdfstring{\MakeUppercase{#1}}{#1}}}
-\newcommand{\guapintro}{\guapsection{Введение}}
-\newcommand{\guapconclusion}{\guapsection{Заключение}}
+\newcommand{\suaiintro}{\suaisection{Введение}}
+\newcommand{\suaiconclusion}{\suaisection{Заключение}}
 
-\renewcommand{\cfttoctitlefont}{\hfill\guapheadfont}
+\renewcommand{\cfttoctitlefont}{\hfill\suaiheadfont}
 \renewcommand{\cftaftertoctitle}{\hfill\null}
 \setlength{\cftbeforetoctitleskip}{0pt}
 \setlength{\cftaftertoctitleskip}{14pt}
@@ -123,7 +123,7 @@
 \setlength{\cftsubsubsecnumwidth}{3.4em}
 \AtBeginDocument{\renewcommand{\contentsname}{СОДЕРЖАНИЕ}}
 
-\newcommand{\guaptoc}{\clearpage\tableofcontents}
+\newcommand{\suaitoc}{\clearpage\tableofcontents}
 
 %%---------------------------------------------------------------------
 %%  5. ПОДПИСИ, ТАБЛИЦЫ, ПЕРЕЧИСЛЕНИЯ (ГОСТ 7.32-2017, пп. 6.5, 6.6;
@@ -154,14 +154,14 @@
 \setlist[enumerate,1]{label=\arabic*)}
 
 % буквы без ё, з, й, о, ч, ъ, ы, ь
-\newcommand\guap@lower[1]{%
+\newcommand\suai@lower[1]{%
   \ifcase#1\relax\or а\or б\or в\or г\or д\or е\or ж\or и\or к\or л\or
   м\or н\or п\or р\or с\or т\or у\or ф\or х\or ц\or ш\or щ\or э\or ю\or я\fi}
-\newcommand\guap@upper[1]{%
+\newcommand\suai@upper[1]{%
   \ifcase#1\relax\or А\or Б\or В\or Г\or Д\or Е\or Ж\or И\or К\or Л\or
   М\or Н\or П\or Р\or С\or Т\or У\or Ф\or Х\or Ц\or Ш\or Щ\or Э\or Ю\or Я\fi}
-\newcommand{\gostletter}[1]{\expandafter\guap@lower\csname c@#1\endcsname}
-\AddEnumerateCounter{\gostletter}{\guap@lower}{я}
+\newcommand{\gostletter}[1]{\expandafter\suai@lower\csname c@#1\endcsname}
+\AddEnumerateCounter{\gostletter}{\suai@lower}{я}
 
 \newlist{gostenum}{enumerate}{2}
 \setlist[gostenum,1]{label=\gostletter*),labelindent=\parindent}
@@ -173,19 +173,19 @@
 %%  цветной для электронной версии: \lstset{style=gostcolor}.
 %%---------------------------------------------------------------------
 \renewcommand{\lstlistingname}{Листинг}
-\definecolor{guapFrame}{HTML}{B5B5B5}
-\definecolor{guapKeyword}{HTML}{0B4F9E}
-\definecolor{guapComment}{HTML}{5C7A5C}
-\definecolor{guapString}{HTML}{A03030}
-\definecolor{guapBack}{HTML}{FAFAFA}
+\definecolor{suaiFrame}{HTML}{B5B5B5}
+\definecolor{suaiKeyword}{HTML}{0B4F9E}
+\definecolor{suaiComment}{HTML}{5C7A5C}
+\definecolor{suaiString}{HTML}{A03030}
+\definecolor{suaiBack}{HTML}{FAFAFA}
 
 \lstdefinestyle{gost}{
   basicstyle=\ttfamily\fontsize{12}{14}\selectfont,
   numbers=left, numberstyle=\ttfamily\fontsize{10}{12}\selectfont,
   numbersep=10pt, stepnumber=1,
-  frame=single, rulecolor=\color{guapFrame}, framesep=5pt,
+  frame=single, rulecolor=\color{suaiFrame}, framesep=5pt,
   breaklines=true, breakatwhitespace=true,
-  postbreak=\mbox{\textcolor{guapFrame}{$\hookrightarrow$}\space},
+  postbreak=\mbox{\textcolor{suaiFrame}{$\hookrightarrow$}\space},
   showstringspaces=false, tabsize=4, columns=fullflexible,
   keepspaces=true, extendedchars=true, upquote=true,
   captionpos=t, aboveskip=10pt, belowskip=10pt,
@@ -195,48 +195,48 @@
 }
 \lstdefinestyle{gostcolor}{
   style=gost,
-  backgroundcolor=\color{guapBack},
-  keywordstyle=\bfseries\color{guapKeyword},
-  commentstyle=\itshape\color{guapComment},
-  stringstyle=\color{guapString},
+  backgroundcolor=\color{suaiBack},
+  keywordstyle=\bfseries\color{suaiKeyword},
+  commentstyle=\itshape\color{suaiComment},
+  stringstyle=\color{suaiString},
 }
 \lstset{style=gost}
 
 %%---------------------------------------------------------------------
 %%  7. ПРИЛОЖЕНИЯ (ГОСТ 7.32-2017, п. 6.14)
-%%  \guapapp{Название}, \guapapp[справочное]{Название}.
+%%  \suaiapp{Название}, \suaiapp[справочное]{Название}.
 %%  Рисунки, таблицы, формулы и листинги нумеруются А.1, А.2, ...
 %%  Формулы в основной части — сквозные (1), по разделам (1.1):
 %%  \numberwithin{equation}{section}.
 %%---------------------------------------------------------------------
-\newcounter{guapapp}
-\newcommand{\guapappletter}{\guap@upper{\value{guapapp}}}
+\newcounter{suaiapp}
+\newcommand{\suaiappletter}{\suai@upper{\value{suaiapp}}}
 
-\newcommand\guap@appnumbering[1]{%
+\newcommand\suai@appnumbering[1]{%
   \setcounter{#1}{0}%
-  \expandafter\def\csname the#1\endcsname{\guapappletter.\arabic{#1}}%
+  \expandafter\def\csname the#1\endcsname{\suaiappletter.\arabic{#1}}%
   % свои якоря hyperref, иначе ссылка ведёт на рисунок 1 основной части
-  \expandafter\def\csname theH#1\endcsname{app\arabic{guapapp}.\arabic{#1}}}
+  \expandafter\def\csname theH#1\endcsname{app\arabic{suaiapp}.\arabic{#1}}}
 
-\newcommand{\guapapp}[2][обязательное]{%
+\newcommand{\suaiapp}[2][обязательное]{%
   \clearpage
-  \stepcounter{guapapp}%
+  \stepcounter{suaiapp}%
   \phantomsection
   \addcontentsline{toc}{section}%
-    {\texorpdfstring{ПРИЛОЖЕНИЕ~\guapappletter\ #2}{Прил. #2}}%
-  \guap@appnumbering{figure}\guap@appnumbering{table}%
-  \guap@appnumbering{equation}\guap@appnumbering{lstlisting}%
+    {\texorpdfstring{ПРИЛОЖЕНИЕ~\suaiappletter\ #2}{Прил. #2}}%
+  \suai@appnumbering{figure}\suai@appnumbering{table}%
+  \suai@appnumbering{equation}\suai@appnumbering{lstlisting}%
   {\centering
-   {\guapheadfont ПРИЛОЖЕНИЕ~\guapappletter\par}
+   {\suaiheadfont ПРИЛОЖЕНИЕ~\suaiappletter\par}
    \vspace{2pt}
    {\normalfont(#1)\par}
    \vspace{8pt}
-   {\guapheadfont\MakeUppercase{#2}\par}}
+   {\suaiheadfont\MakeUppercase{#2}\par}}
   \vspace{14pt}\par}
 
 %%---------------------------------------------------------------------
 %%  8. ТИТУЛЬНЫЙ ЛИСТ
-%%  \guapsetup{ключ = значение, ...}, вывод — \maketitle.
+%%  \suaisetup{ключ = значение, ...}, вывод — \maketitle.
 %%  Снят с официального бланка ГУАП (Word): Times 12 pt, название работы
 %%  и дисциплины 14 pt, подписи под линиями 10 pt, поля 30/10/20/20 мм.
 %%  Расстояния — между базовыми линиями в bp (пункты Word),
@@ -244,66 +244,66 @@
 %%  если длинное название не помещается.
 %%---------------------------------------------------------------------
 \ExplSyntaxOn
-\keys_define:nn { guap }
+\keys_define:nn { suai }
   {
-    department   .tl_set:c    = guap@department,
-    teacher-post .tl_set:c    = guap@teacherpost,
-    teacher      .tl_set:c    = guap@teacher,
-    type         .tl_set:c    = guap@type,
+    department   .tl_set:c    = suai@department,
+    teacher-post .tl_set:c    = suai@teacherpost,
+    teacher      .tl_set:c    = suai@teacher,
+    type         .tl_set:c    = suai@type,
     type         .initial:n   = Отчет~о~лабораторной~работе,
-    number       .tl_set:c    = guap@number,
-    title        .tl_set:c    = guap@title,
-    course-label .tl_set:c    = guap@courselabel,
+    number       .tl_set:c    = suai@number,
+    title        .tl_set:c    = suai@title,
+    course-label .tl_set:c    = suai@courselabel,
     course-label .initial:n   = по~курсу:,
-    course       .tl_set:c    = guap@course,
-    group        .tl_set:c    = guap@group,
-    student      .clist_set:N = \l__guap_students_clist,
-    date         .tl_set:c    = guap@date,
-    city         .tl_set:c    = guap@city,
+    course       .tl_set:c    = suai@course,
+    group        .tl_set:c    = suai@group,
+    student      .clist_set:N = \l__suai_students_clist,
+    date         .tl_set:c    = suai@date,
+    city         .tl_set:c    = suai@city,
     city         .initial:n   = Санкт-Петербург,
-    year         .tl_set:c    = guap@year,
+    year         .tl_set:c    = suai@year,
     year         .initial:x   = \int_use:N \c_sys_year_int,
   }
-\NewDocumentCommand \guapsetup { m } { \keys_set:nn { guap } {#1} }
+\NewDocumentCommand \suaisetup { m } { \keys_set:nn { suai } {#1} }
 
 % date = today -> ДД.ММ.ГГГГ на момент сборки
-\cs_new:Npn \__guap_two_digits:n #1
+\cs_new:Npn \__suai_two_digits:n #1
   { \int_compare:nNnT {#1} < { 10 } { 0 } \int_use:N #1 }
-\cs_new:cpn { guap@thedate }
+\cs_new:cpn { suai@thedate }
   {
-    \tl_if_eq:cnTF { guap@date } { today }
+    \tl_if_eq:cnTF { suai@date } { today }
       {
-        \__guap_two_digits:n \c_sys_day_int .
-        \__guap_two_digits:n \c_sys_month_int .
+        \__suai_two_digits:n \c_sys_day_int .
+        \__suai_two_digits:n \c_sys_month_int .
         \int_use:N \c_sys_year_int
       }
-      { \use:c { guap@date } }
+      { \use:c { suai@date } }
   }
-\cs_new_protected:cpn { guap@forstudents } #1
-  { \clist_map_inline:Nn \l__guap_students_clist {#1} }
-\cs_new:cpn { guap@firststudent }
-  { \clist_if_empty:NF \l__guap_students_clist
-      { \clist_item:Nn \l__guap_students_clist { 1 } } }
+\cs_new_protected:cpn { suai@forstudents } #1
+  { \clist_map_inline:Nn \l__suai_students_clist {#1} }
+\cs_new:cpn { suai@firststudent }
+  { \clist_if_empty:NF \l__suai_students_clist
+      { \clist_item:Nn \l__suai_students_clist { 1 } } }
 \ExplSyntaxOff
 
 % ширина по бланку: #1 из 48135 (вся строка бланка — 481,35 pt)
-\newcommand\guap@tw[1]{\dimexpr\textwidth*#1/48135\relax}
+\newcommand\suai@tw[1]{\dimexpr\textwidth*#1/48135\relax}
 % ячейка с текстом над линией
-\newcommand\guap@cell[2]{%
+\newcommand\suai@cell[2]{%
   \makebox[#1][c]{#2}\kern-#1\rule[-3.25bp]{#1}{0.5bp}}
 % подпись под линией
-\newcommand\guap@cap[2]{\makebox[#1][c]{\fontsize{10.0375}{11.5bp}\selectfont#2}}
+\newcommand\suai@cap[2]{\makebox[#1][c]{\fontsize{10.0375}{11.5bp}\selectfont#2}}
 % #1 — расстояние от предыдущей базовой линии, #2 — кегль,
 % #3 — интерлиньяж, #4 — выключка, #5 — текст
-\newcommand\guap@block[5]{%
+\newcommand\suai@block[5]{%
   \par\vskip\glueexpr#1-#3\relax
   \begingroup\fontsize{#2}{#3}\selectfont#4#5\par\endgroup}
-\newcommand\guap@line[2]{%
-  \guap@block{#1}{12.045}{13.8bp}{\noindent}{\makebox[\linewidth][l]{#2}}}
-\newcommand\guap@caps[1]{%
-  \guap@block{10.3bp}{10.0375}{11.5bp}{\noindent}{\makebox[\linewidth][l]{#1}}}
-\newcommand\guap@normal[3]{\guap@block{#1}{12.045}{13.8bp}{#2}{#3}}
-\newcommand\guap@large[3]{\guap@block{#1}{14.0526}{16.1bp}{#2}{#3}}
+\newcommand\suai@line[2]{%
+  \suai@block{#1}{12.045}{13.8bp}{\noindent}{\makebox[\linewidth][l]{#2}}}
+\newcommand\suai@caps[1]{%
+  \suai@block{10.3bp}{10.0375}{11.5bp}{\noindent}{\makebox[\linewidth][l]{#1}}}
+\newcommand\suai@normal[3]{\suai@block{#1}{12.045}{13.8bp}{#2}{#3}}
+\newcommand\suai@large[3]{\suai@block{#1}{14.0526}{16.1bp}{#2}{#3}}
 
 \renewcommand{\maketitle}{%
   \newgeometry{left=30mm,right=10mm,top=20mm,bottom=20mm}%
@@ -314,119 +314,119 @@
   \setlength{\topskip}{0bp}%
   \lineskiplimit=-\maxdimen \lineskip=0bp
   \hbox{}%
-  \guap@normal{11.2bp}{\centering}{ГУАП}%
-  \guap@normal{37.8bp}{\centering}{КАФЕДРА № \guap@department}%
-  \guap@normal{73.8bp}{\raggedright}{ОТЧЕТ\\ЗАЩИЩЕН С ОЦЕНКОЙ}%
-  \guap@normal{19.8bp}{\raggedright}{ПРЕПОДАВАТЕЛЬ}%
-  \guap@line{26.7bp}{%
-    \guap@cell{\guap@tw{16175}}{\guap@teacherpost}\hspace{\guap@tw{1420}}%
-    \guap@cell{\guap@tw{14100}}{\guap@thedate}\hspace{\guap@tw{1370}}%
-    \guap@cell{\guap@tw{15070}}{\guap@teacher}}%
-  \guap@caps{%
-    \guap@cap{\guap@tw{16175}}{должность, уч. степень, звание}\hspace{\guap@tw{1420}}%
-    \guap@cap{\guap@tw{14100}}{подпись, дата}\hspace{\guap@tw{1370}}%
-    \guap@cap{\guap@tw{15070}}{инициалы, фамилия}}%
-  \guap@large{79.0bp minus 30bp}{\centering}{%
-    \MakeUppercase{\guap@type}\ifx\guap@number\@empty\else\ №\guap@number\fi}%
-  \guap@large{52.1bp}{\centering}{\MakeUppercase{\guap@title}}%
-  \guap@normal{56.2bp}{\centering}{\guap@courselabel}%
-  \guap@large{27.7bp}{\centering}{\guap@course}%
-  \guap@normal{112bp minus 70bp}{\raggedright}{РАБОТУ ВЫПОЛНИЛ}%
-  \guap@forstudents{%
-    \guap@line{26.7bp}{%
-      \makebox[\guap@tw{10805}][l]{СТУДЕНТ гр. №}%
-      \guap@cell{\guap@tw{8660}}{\guap@group}\hspace{\guap@tw{1190}}%
-      \guap@cell{\guap@tw{13170}}{\guap@thedate}\hspace{\guap@tw{1180}}%
-      \guap@cell{\guap@tw{13130}}{##1}}%
-    \guap@caps{%
-      \hspace{\guap@tw{20655}}% 10805 + 8660 + 1190
-      \guap@cap{\guap@tw{13170}}{подпись, дата}\hspace{\guap@tw{1180}}%
-      \guap@cap{\guap@tw{13130}}{инициалы, фамилия}}}%
-  \guap@normal{114.6bp minus 80bp}{\centering}{\guap@city\ \guap@year}%
+  \suai@normal{11.2bp}{\centering}{ГУАП}%
+  \suai@normal{37.8bp}{\centering}{КАФЕДРА № \suai@department}%
+  \suai@normal{73.8bp}{\raggedright}{ОТЧЕТ\\ЗАЩИЩЕН С ОЦЕНКОЙ}%
+  \suai@normal{19.8bp}{\raggedright}{ПРЕПОДАВАТЕЛЬ}%
+  \suai@line{26.7bp}{%
+    \suai@cell{\suai@tw{16175}}{\suai@teacherpost}\hspace{\suai@tw{1420}}%
+    \suai@cell{\suai@tw{14100}}{\suai@thedate}\hspace{\suai@tw{1370}}%
+    \suai@cell{\suai@tw{15070}}{\suai@teacher}}%
+  \suai@caps{%
+    \suai@cap{\suai@tw{16175}}{должность, уч. степень, звание}\hspace{\suai@tw{1420}}%
+    \suai@cap{\suai@tw{14100}}{подпись, дата}\hspace{\suai@tw{1370}}%
+    \suai@cap{\suai@tw{15070}}{инициалы, фамилия}}%
+  \suai@large{79.0bp minus 30bp}{\centering}{%
+    \MakeUppercase{\suai@type}\ifx\suai@number\@empty\else\ №\suai@number\fi}%
+  \suai@large{52.1bp}{\centering}{\MakeUppercase{\suai@title}}%
+  \suai@normal{56.2bp}{\centering}{\suai@courselabel}%
+  \suai@large{27.7bp}{\centering}{\suai@course}%
+  \suai@normal{112bp minus 70bp}{\raggedright}{РАБОТУ ВЫПОЛНИЛ}%
+  \suai@forstudents{%
+    \suai@line{26.7bp}{%
+      \makebox[\suai@tw{10805}][l]{СТУДЕНТ гр. №}%
+      \suai@cell{\suai@tw{8660}}{\suai@group}\hspace{\suai@tw{1190}}%
+      \suai@cell{\suai@tw{13170}}{\suai@thedate}\hspace{\suai@tw{1180}}%
+      \suai@cell{\suai@tw{13130}}{##1}}%
+    \suai@caps{%
+      \hspace{\suai@tw{20655}}% 10805 + 8660 + 1190
+      \suai@cap{\suai@tw{13170}}{подпись, дата}\hspace{\suai@tw{1180}}%
+      \suai@cap{\suai@tw{13130}}{инициалы, фамилия}}}%
+  \suai@normal{114.6bp minus 80bp}{\centering}{\suai@city\ \suai@year}%
   \vfill
   \endgroup
   \clearpage
   \restoregeometry
   \setcounter{page}{2}}% титул считается, но не нумеруется
-\newcommand{\guaptitlepage}{\maketitle}
+\newcommand{\suaititlepage}{\maketitle}
 
 %%---------------------------------------------------------------------
 %%  9. ССЫЛКИ, РИСУНКИ И КОД ИЗ ФАЙЛА
 %%  \figref{scheme} = «рисунке 1»; префикс метки (fig:) можно не писать.
-%%  \guapimg[ширина]{файл}{подпись}[метка]  метка по умолчанию fig:имя-файла
-%%  \guapcode[язык]{файл}{подпись}[метка]   метка по умолчанию lst:файл,
+%%  \suaiimg[ширина]{файл}{подпись}[метка]  метка по умолчанию fig:имя-файла
+%%  \suaicode[язык]{файл}{подпись}[метка]   метка по умолчанию lst:файл,
 %%    файл ищется как есть, затем в code/
 %%---------------------------------------------------------------------
 \RequirePackage[hidelinks,bookmarksnumbered]{hyperref}
 \RequirePackage{bookmark,xurl}
 \AtBeginDocument{%
-  \hypersetup{pdftitle={\guap@title}, pdfauthor={\guap@firststudent},
+  \hypersetup{pdftitle={\suai@title}, pdfauthor={\suai@firststudent},
               pdflang={ru-RU}}}
 
-\newcommand{\guapref}[2]{\@ifundefined{r@#2}{\ref{#1:#2}}{\ref{#2}}}
-\newcommand{\figref}[1]{рисунке~\guapref{fig}{#1}}
-\newcommand{\tabref}[1]{таблице~\guapref{tab}{#1}}
-\newcommand{\lstref}[1]{листинге~\guapref{lst}{#1}}
-\newcommand{\formref}[1]{формуле~(\guapref{eq}{#1})}
+\newcommand{\suairef}[2]{\@ifundefined{r@#2}{\ref{#1:#2}}{\ref{#2}}}
+\newcommand{\figref}[1]{рисунке~\suairef{fig}{#1}}
+\newcommand{\tabref}[1]{таблице~\suairef{tab}{#1}}
+\newcommand{\lstref}[1]{листинге~\suairef{lst}{#1}}
+\newcommand{\formref}[1]{формуле~(\suairef{eq}{#1})}
 
 \ExplSyntaxOn
-\str_new:N \l__guap_dir_str
-\str_new:N \l__guap_name_str
-\str_new:N \l__guap_ext_str
+\str_new:N \l__suai_dir_str
+\str_new:N \l__suai_name_str
+\str_new:N \l__suai_ext_str
 % images/scheme.png -> \label{fig:scheme}
-\cs_new_protected:cpn { guap@autolabel } #1#2
+\cs_new_protected:cpn { suai@autolabel } #1#2
   {
     \file_parse_full_name:nNNN {#2}
-      \l__guap_dir_str \l__guap_name_str \l__guap_ext_str
-    \use:x { \exp_not:N \label { #1 : \l__guap_name_str } }
+      \l__suai_dir_str \l__suai_name_str \l__suai_ext_str
+    \use:x { \exp_not:N \label { #1 : \l__suai_name_str } }
   }
 \ExplSyntaxOff
 
-\NewDocumentCommand{\guapimg}{O{0.8\textwidth} m m o}{%
+\NewDocumentCommand{\suaiimg}{O{0.8\textwidth} m m o}{%
   \begin{figure}[H]
     \centering
     \includegraphics[width=#1,height=0.75\textheight,keepaspectratio]{#2}%
     \caption{#3}%
-    \IfNoValueTF{#4}{\guap@autolabel{fig}{#2}}{\label{#4}}%
+    \IfNoValueTF{#4}{\suai@autolabel{fig}{#2}}{\label{#4}}%
   \end{figure}}
 
-\NewDocumentCommand{\guapcode}{O{} m m o}{%
-  \IfFileExists{#2}{\def\guap@codefile{#2}}{\def\guap@codefile{code/#2}}%
-  \IfNoValueTF{#4}{\def\guap@codelabel{lst:#2}}{\def\guap@codelabel{#4}}%
-  \lstinputlisting[language={#1},caption={#3},label=\guap@codelabel]%
-    {\guap@codefile}}
+\NewDocumentCommand{\suaicode}{O{} m m o}{%
+  \IfFileExists{#2}{\def\suai@codefile{#2}}{\def\suai@codefile{code/#2}}%
+  \IfNoValueTF{#4}{\def\suai@codelabel{lst:#2}}{\def\suai@codelabel{#4}}%
+  \lstinputlisting[language={#1},caption={#3},label=\suai@codelabel]%
+    {\suai@codefile}}
 
 \ExplSyntaxOn
 %%---------------------------------------------------------------------
 %% 10. БЛОЧНЫЕ КОМАНДЫ: ЧТЕНИЕ СТРОК
 %%  Команда читает строки под собой до пустой строки:
 %%
-%%    \guaptasks                          \guaptable[bench]{Параметры}
+%%    \suaitasks                          \suaitable[bench]{Параметры}
 %%    изучить интерфейс                   Параметр  | Значение
 %%    настроить синхронизацию             Процессор | 8 ядер
 %%
 %%  Блок заканчивается и сам, если строка начинается с \section,
-%%  \begin, \end и т. п. или с любой команды \guap...
-%%  \guap_read_lines:n {код} собирает строки в \g__guap_lines_seq
+%%  \begin, \end и т. п. или с любой команды \suai...
+%%  \suai_read_lines:n {код} собирает строки в \g__suai_lines_seq
 %%  и выполняет код.
 %%---------------------------------------------------------------------
-\seq_new:N \g__guap_lines_seq
-\tl_new:N \g__guap_then_tl
-\bool_new:N \l__guap_cmd_bool
-\str_new:N \l__guap_cmd_str
-\cs_new_protected:Npn \__guap_eol: { }   % значение активного ^^M в блоке
+\seq_new:N \g__suai_lines_seq
+\tl_new:N \g__suai_then_tl
+\bool_new:N \l__suai_cmd_bool
+\str_new:N \l__suai_cmd_str
+\cs_new_protected:Npn \__suai_eol: { }   % значение активного ^^M в блоке
 
-\cs_new_protected:Npn \guap_read_lines:n #1
+\cs_new_protected:Npn \suai_read_lines:n #1
   {
-    \tl_gset:Nn \g__guap_then_tl {#1}
-    \seq_gclear:N \g__guap_lines_seq
+    \tl_gset:Nn \g__suai_then_tl {#1}
+    \seq_gclear:N \g__suai_lines_seq
     \group_begin:
       \char_set_catcode_active:n { 13 }
-      \__guap_lines_start:
+      \__suai_lines_start:
   }
 % #1 — токены, которые вернуть во входной поток после блока
-\cs_new_protected:Npn \__guap_lines_stop:n #1
-  { \group_end: \tl_use:N \g__guap_then_tl #1 }
+\cs_new_protected:Npn \__suai_lines_stop:n #1
+  { \group_end: \tl_use:N \g__suai_then_tl #1 }
 
 % активный конец строки не набрать напрямую: \lowercase делает из
 % активной ~ активный ^^M
@@ -436,49 +436,49 @@
   \tex_lowercase:D
     {
       \group_end:
-      \cs_new_protected:Npn \__guap_lines_start:
+      \cs_new_protected:Npn \__suai_lines_start:
         {
-          \cs_set_eq:NN ~ \__guap_eol:
+          \cs_set_eq:NN ~ \__suai_eol:
           \peek_meaning_remove:NTF \par
-            { \__guap_lines_stop:n { \par } }
-            { \peek_meaning_remove:NTF \__guap_eol: { \__guap_line:w } { \__guap_line:w } }
+            { \__suai_lines_stop:n { \par } }
+            { \peek_meaning_remove:NTF \__suai_eol: { \__suai_line:w } { \__suai_line:w } }
         }
-      \cs_new_protected:Npn \__guap_line:w #1 ~
-        { \tl_trim_spaces_apply:nN {#1} \__guap_line:n }
+      \cs_new_protected:Npn \__suai_line:w #1 ~
+        { \tl_trim_spaces_apply:nN {#1} \__suai_line:n }
     }
 
-\cs_new_protected:Npn \__guap_line:n #1
+\cs_new_protected:Npn \__suai_line:n #1
   {
     \tl_if_blank:nTF {#1}
-      { \__guap_lines_stop:n { \par } }
+      { \__suai_lines_stop:n { \par } }
       {
-        \bool_set_false:N \l__guap_cmd_bool
-        \tl_if_head_is_N_type:nT {#1} { \__guap_check_cmd:w #1 \q_stop }
-        \bool_if:NTF \l__guap_cmd_bool
-          { \__guap_lines_stop:n {#1} }
+        \bool_set_false:N \l__suai_cmd_bool
+        \tl_if_head_is_N_type:nT {#1} { \__suai_check_cmd:w #1 \q_stop }
+        \bool_if:NTF \l__suai_cmd_bool
+          { \__suai_lines_stop:n {#1} }
           {
-            \seq_gput_right:Nn \g__guap_lines_seq {#1}
-            \__guap_line:w
+            \seq_gput_right:Nn \g__suai_lines_seq {#1}
+            \__suai_line:w
           }
       }
   }
 
-\cs_new_protected:Npn \__guap_check_cmd:w #1 #2 \q_stop
+\cs_new_protected:Npn \__suai_check_cmd:w #1 #2 \q_stop
   {
     \token_if_cs:NT #1
       {
-        \str_set:Nx \l__guap_cmd_str { \cs_to_str:N #1 }
-        \exp_args:NV \str_case:nnT \l__guap_cmd_str
+        \str_set:Nx \l__suai_cmd_str { \cs_to_str:N #1 }
+        \exp_args:NV \str_case:nnT \l__suai_cmd_str
           {
             { par } { } { begin } { } { end } { } { section } { }
             { subsection } { } { subsubsection } { } { paragraph } { }
             { clearpage } { } { newpage } { } { maketitle } { }
             { printbibliography } { }
           }
-          { \bool_set_true:N \l__guap_cmd_bool }
+          { \bool_set_true:N \l__suai_cmd_bool }
         \exp_args:Nx \str_if_eq:nnT
-          { \str_range:Nnn \l__guap_cmd_str { 1 } { 4 } } { guap }
-          { \bool_set_true:N \l__guap_cmd_bool }
+          { \str_range:Nnn \l__suai_cmd_str { 1 } { 4 } } { suai }
+          { \bool_set_true:N \l__suai_cmd_bool }
       }
   }
 
@@ -487,22 +487,22 @@
 %%  После пунктов ставится «;», после последнего «.». Свои ; . , в конце
 %%  заменяются, ? ! : остаются. Со звёздочкой пунктуация не трогается.
 %%---------------------------------------------------------------------
-\bool_new:N \l__guap_punct_bool
-\tl_new:N \l__guap_item_tl
-\regex_const:Nn \c__guap_trail_regex { [\;\.\,] \s* \Z }
-\regex_const:Nn \c__guap_keep_regex { [\?\!\:] \s* \Z }
+\bool_new:N \l__suai_punct_bool
+\tl_new:N \l__suai_item_tl
+\regex_const:Nn \c__suai_trail_regex { [\;\.\,] \s* \Z }
+\regex_const:Nn \c__suai_keep_regex { [\?\!\:] \s* \Z }
 
 % #1 — номер строки в блоке
-\cs_new_protected:Npn \__guap_punct:n #1
+\cs_new_protected:Npn \__suai_punct:n #1
   {
-    \bool_if:NT \l__guap_punct_bool
+    \bool_if:NT \l__suai_punct_bool
       {
-        \regex_replace_once:NnN \c__guap_trail_regex { } \l__guap_item_tl
-        \exp_args:NNV \regex_match:NnF \c__guap_keep_regex \l__guap_item_tl
+        \regex_replace_once:NnN \c__suai_trail_regex { } \l__suai_item_tl
+        \exp_args:NNV \regex_match:NnF \c__suai_keep_regex \l__suai_item_tl
           {
-            \tl_put_right:Nx \l__guap_item_tl
+            \tl_put_right:Nx \l__suai_item_tl
               {
-                \int_compare:nNnTF {#1} = { \seq_count:N \g__guap_lines_seq }
+                \int_compare:nNnTF {#1} = { \seq_count:N \g__suai_lines_seq }
                   { . } { ; }
               }
           }
@@ -510,36 +510,36 @@
   }
 
 % #1 — окружение, #2 — булево «без пунктуации»
-\cs_new_protected:Npn \__guap_list:nn #1#2
+\cs_new_protected:Npn \__suai_list:nn #1#2
   {
-    \seq_if_empty:NF \g__guap_lines_seq
+    \seq_if_empty:NF \g__suai_lines_seq
       {
-        \bool_set:Nn \l__guap_punct_bool { ! #2 }
+        \bool_set:Nn \l__suai_punct_bool { ! #2 }
         \begin{#1}
-          \seq_map_indexed_function:NN \g__guap_lines_seq \__guap_list_item:nn
+          \seq_map_indexed_function:NN \g__suai_lines_seq \__suai_list_item:nn
         \end{#1}
       }
   }
-\cs_new_protected:Npn \__guap_list_item:nn #1#2
+\cs_new_protected:Npn \__suai_list_item:nn #1#2
   {
-    \tl_set:Nn \l__guap_item_tl {#2}
-    \__guap_punct:n {#1}
-    \item \tl_use:N \l__guap_item_tl
+    \tl_set:Nn \l__suai_item_tl {#2}
+    \__suai_punct:n {#1}
+    \item \tl_use:N \l__suai_item_tl
   }
 
-\NewDocumentCommand \guaplist { s }
-  { \guap_read_lines:n { \__guap_list:nn { itemize } {#1} } }
-\NewDocumentCommand \guapenum { s }
-  { \guap_read_lines:n { \__guap_list:nn { gostenum } {#1} } }
-\NewDocumentCommand \guapnum { s }
-  { \guap_read_lines:n { \__guap_list:nn { enumerate } {#1} } }
-\NewDocumentCommand \guaptasks
+\NewDocumentCommand \suailist { s }
+  { \suai_read_lines:n { \__suai_list:nn { itemize } {#1} } }
+\NewDocumentCommand \suaienum { s }
+  { \suai_read_lines:n { \__suai_list:nn { gostenum } {#1} } }
+\NewDocumentCommand \suainum { s }
+  { \suai_read_lines:n { \__suai_list:nn { enumerate } {#1} } }
+\NewDocumentCommand \suaitasks
   { s O{Для~достижения~поставленной~цели~необходимо~решить~следующие~задачи:} }
   {
-    \guap_read_lines:n
+    \suai_read_lines:n
       {
         \tl_if_blank:nF {#2} { \par #2 \par }
-        \__guap_list:nn { gostenum } {#1}
+        \__suai_list:nn { gostenum } {#1}
       }
   }
 
@@ -549,181 +549,181 @@
 %%  самого длинного текста (от 4 до 40 символов). Длинная таблица
 %%  переносится с «Продолжение таблицы N» и повтором шапки.
 %%---------------------------------------------------------------------
-\int_new:N \l__guap_cols_int
-\prop_new:N \l__guap_width_prop
-\seq_new:N \l__guap_cells_seq
-\fp_new:N \l__guap_sum_fp
-\tl_new:N \l__guap_spec_tl
-\tl_new:N \l__guap_head_tl
-\tl_new:N \l__guap_body_tl
-\tl_new:N \l__guap_row_tl
-\tl_new:N \l__guap_table_tl
+\int_new:N \l__suai_cols_int
+\prop_new:N \l__suai_width_prop
+\seq_new:N \l__suai_cells_seq
+\fp_new:N \l__suai_sum_fp
+\tl_new:N \l__suai_spec_tl
+\tl_new:N \l__suai_head_tl
+\tl_new:N \l__suai_body_tl
+\tl_new:N \l__suai_row_tl
+\tl_new:N \l__suai_table_tl
 
-\cs_new:Npn \__guap_width:n #1
-  { \int_max:nn { 4 } { \int_min:nn { 40 } { \prop_item:Nn \l__guap_width_prop {#1} } } }
+\cs_new:Npn \__suai_width:n #1
+  { \int_max:nn { 4 } { \int_min:nn { 40 } { \prop_item:Nn \l__suai_width_prop {#1} } } }
 
-\cs_new_protected:Npn \__guap_table_measure:n #1
+\cs_new_protected:Npn \__suai_table_measure:n #1
   {
-    \seq_set_split:Nnn \l__guap_cells_seq { | } {#1}
-    \int_set:Nn \l__guap_cols_int
-      { \int_max:nn { \l__guap_cols_int } { \seq_count:N \l__guap_cells_seq } }
-    \seq_map_indexed_function:NN \l__guap_cells_seq \__guap_table_measure:nn
+    \seq_set_split:Nnn \l__suai_cells_seq { | } {#1}
+    \int_set:Nn \l__suai_cols_int
+      { \int_max:nn { \l__suai_cols_int } { \seq_count:N \l__suai_cells_seq } }
+    \seq_map_indexed_function:NN \l__suai_cells_seq \__suai_table_measure:nn
   }
-\cs_new_protected:Npn \__guap_table_measure:nn #1#2
+\cs_new_protected:Npn \__suai_table_measure:nn #1#2
   {
-    \prop_put:Nnx \l__guap_width_prop {#1}
-      { \int_max:nn { 0 \prop_item:Nn \l__guap_width_prop {#1} } { \str_count:n {#2} } }
+    \prop_put:Nnx \l__suai_width_prop {#1}
+      { \int_max:nn { 0 \prop_item:Nn \l__suai_width_prop {#1} } { \str_count:n {#2} } }
   }
 
 % столбец X с долей ширины по длине текста; первый — влево, остальные по центру
-\cs_new_protected:Npn \__guap_table_spec:n #1
+\cs_new_protected:Npn \__suai_table_spec:n #1
   {
-    \tl_put_right:Nx \l__guap_spec_tl
+    \tl_put_right:Nx \l__suai_spec_tl
       {
         | > {
           \exp_not:N \hsize =
-            \fp_eval:n { round ( \l__guap_cols_int * \__guap_width:n {#1} / \l__guap_sum_fp , 4 ) }
+            \fp_eval:n { round ( \l__suai_cols_int * \__suai_width:n {#1} / \l__suai_sum_fp , 4 ) }
             \exp_not:N \hsize
           \exp_not:N \linewidth = \exp_not:N \hsize
           \int_compare:nNnTF {#1} = { 1 }
             { \exp_not:N \raggedright } { \exp_not:N \centering }
           \exp_not:N \arraybackslash
         } X
-        \int_compare:nNnT {#1} = { \l__guap_cols_int } { | }
+        \int_compare:nNnT {#1} = { \l__suai_cols_int } { | }
       }
   }
 
-\cs_new_protected:Npn \__guap_table_row:nn #1#2
+\cs_new_protected:Npn \__suai_table_row:nn #1#2
   {
-    \seq_set_split:Nnn \l__guap_cells_seq { | } {#2}
-    \tl_clear:N \l__guap_row_tl
-    \int_step_inline:nn { \l__guap_cols_int }
+    \seq_set_split:Nnn \l__suai_cells_seq { | } {#2}
+    \tl_clear:N \l__suai_row_tl
+    \int_step_inline:nn { \l__suai_cols_int }
       {
-        \tl_put_right:Nx \l__guap_row_tl
+        \tl_put_right:Nx \l__suai_row_tl
           {
             \int_compare:nNnF {##1} = { 1 } { & }
             \int_compare:nNnT {#1} = { 1 }
               { \exp_not:N \centering \exp_not:N \bfseries }
-            \seq_item:Nn \l__guap_cells_seq {##1}
+            \seq_item:Nn \l__suai_cells_seq {##1}
           }
       }
-    \tl_put_right:Nn \l__guap_row_tl { \tabularnewline \hline }
+    \tl_put_right:Nn \l__suai_row_tl { \tabularnewline \hline }
     \int_compare:nNnTF {#1} = { 1 }
-      { \tl_set_eq:NN \l__guap_head_tl \l__guap_row_tl }
-      { \tl_put_right:NV \l__guap_body_tl \l__guap_row_tl }
+      { \tl_set_eq:NN \l__suai_head_tl \l__suai_row_tl }
+      { \tl_put_right:NV \l__suai_body_tl \l__suai_row_tl }
   }
 
 % #1 — метка без tab:, #2 — название
-\cs_new_protected:Npn \__guap_table:nn #1#2
+\cs_new_protected:Npn \__suai_table:nn #1#2
   {
-    \seq_if_empty:NF \g__guap_lines_seq
+    \seq_if_empty:NF \g__suai_lines_seq
       {
-        \int_zero:N \l__guap_cols_int
-        \prop_clear:N \l__guap_width_prop
-        \seq_map_function:NN \g__guap_lines_seq \__guap_table_measure:n
-        \fp_zero:N \l__guap_sum_fp
-        \int_step_inline:nn { \l__guap_cols_int }
-          { \fp_add:Nn \l__guap_sum_fp { \__guap_width:n {##1} } }
-        \tl_clear:N \l__guap_spec_tl
-        \int_step_function:nN { \l__guap_cols_int } \__guap_table_spec:n
-        \tl_clear:N \l__guap_head_tl
-        \tl_clear:N \l__guap_body_tl
-        \seq_map_indexed_function:NN \g__guap_lines_seq \__guap_table_row:nn
-        \tl_set:Nx \l__guap_table_tl
+        \int_zero:N \l__suai_cols_int
+        \prop_clear:N \l__suai_width_prop
+        \seq_map_function:NN \g__suai_lines_seq \__suai_table_measure:n
+        \fp_zero:N \l__suai_sum_fp
+        \int_step_inline:nn { \l__suai_cols_int }
+          { \fp_add:Nn \l__suai_sum_fp { \__suai_width:n {##1} } }
+        \tl_clear:N \l__suai_spec_tl
+        \int_step_function:nN { \l__suai_cols_int } \__suai_table_spec:n
+        \tl_clear:N \l__suai_head_tl
+        \tl_clear:N \l__suai_body_tl
+        \seq_map_indexed_function:NN \g__suai_lines_seq \__suai_table_row:nn
+        \tl_set:Nx \l__suai_table_tl
           {
-            \exp_not:N \begin{xltabular}{\exp_not:N \textwidth}{\exp_not:V \l__guap_spec_tl}
+            \exp_not:N \begin{xltabular}{\exp_not:N \textwidth}{\exp_not:V \l__suai_spec_tl}
             \exp_not:N \caption{\exp_not:n {#2}}
             \tl_if_blank:nF {#1} { \exp_not:N \label{tab:\exp_not:n {#1}} }
             \exp_not:N \tabularnewline
             \exp_not:N \hline
-            \exp_not:V \l__guap_head_tl
+            \exp_not:V \l__suai_head_tl
             \exp_not:N \endfirsthead
-            \exp_not:N \multicolumn{\int_use:N \l__guap_cols_int}{@{}l}
+            \exp_not:N \multicolumn{\int_use:N \l__suai_cols_int}{@{}l}
               {Продолжение~таблицы~\exp_not:N \thetable}
             \exp_not:N \tabularnewline
             \exp_not:N \hline
-            \exp_not:V \l__guap_head_tl
+            \exp_not:V \l__suai_head_tl
             \exp_not:N \endhead
-            \exp_not:V \l__guap_body_tl
+            \exp_not:V \l__suai_body_tl
             \exp_not:N \end{xltabular}
           }
-        \tl_use:N \l__guap_table_tl
+        \tl_use:N \l__suai_table_tl
       }
   }
 
-\NewDocumentCommand \guaptable { O{} m }
-  { \guap_read_lines:n { \__guap_table:nn {#1} {#2} } }
+\NewDocumentCommand \suaitable { O{} m }
+  { \suai_read_lines:n { \__suai_table:nn {#1} {#2} } }
 
 %%---------------------------------------------------------------------
 %% 13. ФОРМУЛА С ПОЯСНЕНИЯМИ
 %%  Строки «обозначение | смысл» дают «где V — ...;». Обозначение
 %%  оборачивается в $...$, если $ не написан.
 %%---------------------------------------------------------------------
-\box_new:N \l__guap_where_box
-\tl_new:N \l__guap_sym_tl
+\box_new:N \l__suai_where_box
+\tl_new:N \l__suai_sym_tl
 
-\cs_new_protected:Npn \__guap_where_item:nn #1#2
+\cs_new_protected:Npn \__suai_where_item:nn #1#2
   {
-    \seq_set_split:Nnn \l__guap_cells_seq { | } {#2}
-    \int_compare:nNnTF { \seq_count:N \l__guap_cells_seq } > { 1 }
+    \seq_set_split:Nnn \l__suai_cells_seq { | } {#2}
+    \int_compare:nNnTF { \seq_count:N \l__suai_cells_seq } > { 1 }
       {
-        \seq_pop_left:NN \l__guap_cells_seq \l__guap_sym_tl
-        \tl_if_in:NnF \l__guap_sym_tl { $ }
-          { \tl_set:Nx \l__guap_sym_tl { $ \exp_not:V \l__guap_sym_tl $ } }
-        \tl_set:Nx \l__guap_item_tl
+        \seq_pop_left:NN \l__suai_cells_seq \l__suai_sym_tl
+        \tl_if_in:NnF \l__suai_sym_tl { $ }
+          { \tl_set:Nx \l__suai_sym_tl { $ \exp_not:V \l__suai_sym_tl $ } }
+        \tl_set:Nx \l__suai_item_tl
           {
-            \exp_not:V \l__guap_sym_tl
+            \exp_not:V \l__suai_sym_tl
             \exp_not:N \nobreakspace \exp_not:N \textemdash \c_space_tl
-            \seq_use:Nn \l__guap_cells_seq { | }
+            \seq_use:Nn \l__suai_cells_seq { | }
           }
       }
-      { \tl_set:Nn \l__guap_item_tl {#2} }
-    \__guap_punct:n {#1}
+      { \tl_set:Nn \l__suai_item_tl {#2} }
+    \__suai_punct:n {#1}
     \par \noindent
-    \hangindent = \box_wd:N \l__guap_where_box
+    \hangindent = \box_wd:N \l__suai_where_box
     \hangafter = 1 \scan_stop:
     \int_compare:nNnTF {#1} = { 1 }
-      { \box_use:N \l__guap_where_box }
-      { \skip_horizontal:n { \box_wd:N \l__guap_where_box } }
-    \tl_use:N \l__guap_item_tl
+      { \box_use:N \l__suai_where_box }
+      { \skip_horizontal:n { \box_wd:N \l__suai_where_box } }
+    \tl_use:N \l__suai_item_tl
   }
 
-\cs_new_protected:Npn \__guap_eq:nn #1#2
+\cs_new_protected:Npn \__suai_eq:nn #1#2
   {
     \begin{equation}
       #2
       \tl_if_blank:nF {#1} { \label{eq:#1} }
     \end{equation}
-    \seq_if_empty:NF \g__guap_lines_seq
+    \seq_if_empty:NF \g__suai_lines_seq
       {
-        \hbox_set:Nn \l__guap_where_box { где \c_space_tl }
-        \bool_set_true:N \l__guap_punct_bool
-        \seq_map_indexed_function:NN \g__guap_lines_seq \__guap_where_item:nn
+        \hbox_set:Nn \l__suai_where_box { где \c_space_tl }
+        \bool_set_true:N \l__suai_punct_bool
+        \seq_map_indexed_function:NN \g__suai_lines_seq \__suai_where_item:nn
         \par
       }
   }
 
-\NewDocumentCommand \guapeq { O{} m }
-  { \guap_read_lines:n { \__guap_eq:nn {#1} {#2} } }
+\NewDocumentCommand \suaieq { O{} m }
+  { \suai_read_lines:n { \__suai_eq:nn {#1} {#2} } }
 
 %%---------------------------------------------------------------------
 %% 14. СПИСОК ИСТОЧНИКОВ
 %%  Строки под командой — источники по порядку. Без строк список
 %%  печатает biblatex (\printbibliography), если он подключён.
 %%---------------------------------------------------------------------
-\cs_new_protected:Npn \__guap_sources:
+\cs_new_protected:Npn \__suai_sources:
   {
-    \guapsection { Список~использованных~источников }
-    \seq_if_empty:NTF \g__guap_lines_seq
+    \suaisection { Список~использованных~источников }
+    \seq_if_empty:NTF \g__suai_lines_seq
       { \cs_if_exist:NT \printbibliography { \printbibliography [ heading = none ] } }
       {
         \begin{enumerate} [ label = \arabic*. , wide = \parindent ]
-          \seq_map_inline:Nn \g__guap_lines_seq { \item ##1 }
+          \seq_map_inline:Nn \g__suai_lines_seq { \item ##1 }
         \end{enumerate}
       }
   }
-\NewDocumentCommand \guapsources { }
-  { \guap_read_lines:n { \__guap_sources: } }
+\NewDocumentCommand \suaisources { }
+  { \suai_read_lines:n { \__suai_sources: } }
 
 %%---------------------------------------------------------------------
 %% 15. ЛИСТИНГ В ТЕКСТЕ
@@ -731,17 +731,17 @@
 %%   \begin{code}[Python, main]{Подпись}              метка lst:main
 %%   \begin{code}[language=C, firstnumber=10]{Подпись} ключи listings
 %%---------------------------------------------------------------------
-\int_new:N \l__guap_code_int
-\cs_new_protected:cpn { guap@codeopts } #1#2
+\int_new:N \l__suai_code_int
+\cs_new_protected:cpn { suai@codeopts } #1#2
   {
-    \int_zero:N \l__guap_code_int
+    \int_zero:N \l__suai_code_int
     \clist_map_inline:nn {#1}
       {
         \tl_if_in:nnTF {##1} { = }
           { \lstset {##1} }
           {
-            \int_incr:N \l__guap_code_int
-            \int_case:nn { \l__guap_code_int }
+            \int_incr:N \l__suai_code_int
+            \int_case:nn { \l__suai_code_int }
               {
                 { 1 } { \lstset { language = {##1} } }
                 { 2 } { \lstset { label = { lst:##1 } } }
@@ -752,6 +752,6 @@
   }
 \ExplSyntaxOff
 
-\lstnewenvironment{code}[2][]{\guap@codeopts{#1}{#2}}{}
+\lstnewenvironment{code}[2][]{\suai@codeopts{#1}{#2}}{}
 
 \endinput

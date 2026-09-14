@@ -1,13 +1,13 @@
 {
-  "pkg": "guap",
+  "pkg": "suai-report",
   "author": "Grigorii Moiseev",
   "uploader": "Grigorii Moiseev",
-  "ctanPath": "/macros/xetex/latex/guap",
+  "ctanPath": "/macros/xetex/latex/suai-report",
   "license": "mit",
   "home": "https://github.com/Echways/suai-report",
   "repository": "https://github.com/Echways/suai-report",
   "bugtracker": "https://github.com/Echways/suai-report/issues",
   "topic": ["report-like", "std-conform", "titlepage", "russian", "xetex"],
   "summary": "Reports for SUAI (Saint Petersburg State University of Aerospace Instrumentation) following GOST 7.32-2017",
-  "description": "<p>The package typesets student reports (lab works, coursework, practice reports) for Saint Petersburg State University of Aerospace Instrumentation (SUAI, ГУАП) according to the Russian standards GOST 7.32-2017 and GOST 2.105-2019.</p><p>The title page reproduces the official university form. Page layout, headings, table of contents, captions, numbered tables, figures, equations, listings, appendices and the list of sources are set up automatically. Line-based block commands (<code>\\guaptasks</code>, <code>\\guaptable</code>, <code>\\guapeq</code>, <code>\\guapsources</code> and others) keep the document source short: every line becomes a list item, a table row or an explanation of a symbol.</p><p>The package requires XeLaTeX. Times New Roman, Liberation Sans and Liberation Mono are used when installed, otherwise TeX Gyre Termes, Heros and Cursor. Documentation is in Russian.</p>"
+  "description": "<p>The package typesets student reports (lab works, coursework, practice reports) for Saint Petersburg State University of Aerospace Instrumentation (SUAI, ГУАП) according to the Russian standards GOST 7.32-2017 and GOST 2.105-2019.</p><p>The title page reproduces the official university form. Page layout, headings, table of contents, captions, numbered tables, figures, equations, listings, appendices and the list of sources are set up automatically. Line-based block commands (<code>\\suaitasks</code>, <code>\\suaitable</code>, <code>\\suaieq</code>, <code>\\suaisources</code> and others) keep the document source short: every line becomes a list item, a table row or an explanation of a symbol.</p><p>The package requires XeLaTeX. Times New Roman, Liberation Sans and Liberation Mono are used when installed, otherwise TeX Gyre Termes, Heros and Cursor. Documentation is in Russian.</p>"
 }

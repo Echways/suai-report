@@ -1,16 +1,16 @@
 {
   // Исходник — src/vscode/settings.json в репозитории шаблона. В отчёты
-  // копируется командой guap new / guap update (правки копии затрутся).
+  // копируется командой suai new / suai update (правки копии затрутся).
   //
   // Сборка: XeLaTeX + Biber, служебное (и PDF с synctex) в build/, готовый
-  // main.pdf копируется рядом с main.tex. guap.sty ищется в ~/texmf (make install).
-  // Эти же аргументы использует команда guap build/watch.
+  // main.pdf копируется рядом с main.tex. suai-report.sty ищется в ~/texmf (make install).
+  // Эти же аргументы использует команда suai build/watch.
   "latex-workshop.latex.recipes": [
-    { "name": "ГУАП (latexmk)", "tools": ["guap-latexmk"] }
+    { "name": "ГУАП (latexmk)", "tools": ["suai-latexmk"] }
   ],
   "latex-workshop.latex.tools": [
     {
-      "name": "guap-latexmk",
+      "name": "suai-latexmk",
       "command": "latexmk",
       "args": [
         "-e", "$pdf_mode = 5; $bibtex_use = 2; $out_dir = q(build); $xelatex = q(xelatex -synctex=1 -interaction=nonstopmode -file-line-error -halt-on-error %O %S); $xdvipdfmx = q(xdvipdfmx -E -o %D %O %S && cp %D %R.pdf)",
@@ -40,7 +40,7 @@
   "latex-workshop.message.badbox.show": "none",
 
   "files.exclude": { "**/build": true },
-  // Сниппеты ГУАП: \guapta + Tab. Enter всегда даёт новую строку, подсказку
+  // Сниппеты ГУАП: \suaita + Tab. Enter всегда даёт новую строку, подсказку
   // принимает только Tab. Слова из текста не подсказываются, иначе они
   // забивают список и перехватывают Tab при заполнении ячеек таблицы.
   "[latex]": {

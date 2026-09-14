@@ -1,12 +1,12 @@
-"""guap — отчёты ГУАП.
+"""suai — отчёты ГУАП.
 
-  guap install            один раз: guap.sty в ~/texmf, команда guap в ~/.local/bin
-  guap new DIR [--title]  новый отчёт
-  guap next [--title]     следующий отчёт рядом: lab-3 -> ../lab-4
-  guap update             обновить .vscode в текущем отчёте
-  guap build|watch|open|clean [DIR]
+  suai install            один раз: suai-report.sty в ~/texmf, команда suai в ~/.local/bin
+  suai new DIR [--title]  новый отчёт
+  suai next [--title]     следующий отчёт рядом: lab-3 -> ../lab-4
+  suai update             обновить .vscode в текущем отчёте
+  suai build|watch|open|clean [DIR]
 
-Всё, что попадает в отчёты, лежит в src/: guap.sty, template.tex, vscode/.
+Всё, что попадает в отчёты, лежит в src/: suai-report.sty, template.tex, vscode/.
 """
 
 import argparse
@@ -21,15 +21,15 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 SRC = REPO / "src"
-STY = SRC / "guap.sty"
+STY = SRC / "suai-report.sty"
 TEMPLATE = SRC / "template.tex"
 VSCODE = SRC / "vscode"  # копируется в .vscode/ отчёта
 DEMO = REPO / "demo" / "main.tex"
 
 REPORT_GITIGNORE = "build/\n"
-BIN = Path.home() / ".local" / "bin" / "guap"
+BIN = Path.home() / ".local" / "bin" / "suai"
 
-SETUP_RE = re.compile(r"^\\guapsetup\{.*?^\}", re.M | re.S)
+SETUP_RE = re.compile(r"^\\suaisetup\{.*?^\}", re.M | re.S)
 TRAILING_NUM_RE = re.compile(r"(\d+)$")
 
 
@@ -78,7 +78,7 @@ def render_main(target: Path, title: str | None) -> tuple[str, Path]:
     source = find_setup_source(target)
     setup = read_setup(source)
     if setup is None:
-        die(f"в {source} нет блока \\guapsetup")
+        die(f"в {source} нет блока \\suaisetup")
 
     num = TRAILING_NUM_RE.search(target.name)
     setup = set_key(setup, "number", str(int(num.group(1))) if num else "")
@@ -107,14 +107,14 @@ def latexmk_args() -> list[str]:
     text = "\n".join(l for l in settings.read_text(encoding="utf-8").splitlines()
                      if not l.lstrip().startswith("//"))
     tools = json.loads(text)["latex-workshop.latex.tools"]
-    tool = next(t for t in tools if t["name"] == "guap-latexmk")
+    tool = next(t for t in tools if t["name"] == "suai-latexmk")
     return [a for a in tool["args"] if a != "%DOC_EXT%"]
 
 
 def texmf_sty() -> Path:
     home = subprocess.run(["kpsewhich", "-var-value", "TEXMFHOME"],
                           capture_output=True, text=True).stdout.strip()
-    return Path(home or Path.home() / "texmf") / "tex" / "latex" / "guap" / "guap.sty"
+    return Path(home or Path.home() / "texmf") / "tex" / "latex" / "suai-report" / "suai-report.sty"
 
 
 def symlink(link: Path, target: Path) -> None:
@@ -149,7 +149,7 @@ def cmd_install() -> None:
     BIN.write_text(f'#!/bin/sh\nexec python3 "{Path(__file__).resolve()}" "$@"\n')
     BIN.chmod(0o755)
     print(f"  {BIN}")
-    if shutil.which("guap") is None:
+    if shutil.which("suai") is None:
         print(f"  добавь {BIN.parent} в PATH")
     print("Готово")
 
@@ -180,7 +180,7 @@ def cmd_new(target: Path, title: str | None, no_open: bool) -> None:
     if not title:
         print("  заполни title в main.tex")
     if not texmf_sty().exists():
-        print("  guap.sty не установлен: выполни make install в репозитории шаблона")
+        print("  suai-report.sty не установлен: выполни make install в репозитории шаблона")
     if not no_open:
         open_editor(target)
 

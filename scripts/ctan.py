@@ -1,13 +1,13 @@
-"""Выпуск guap на CTAN.
+"""Выпуск suai на CTAN.
 
-  ctan.py version              версия из \\ProvidesPackage в src/guap.sty
+  ctan.py version              версия из \\ProvidesPackage в src/suai-report.sty
   ctan.py check-tag TAG        тег совпадает с версией, в CHANGELOG есть раздел
   ctan.py notes [--announce]   текст раздела текущей версии из CHANGELOG
-  ctan.py package              dist/guap.zip (нужен собранный demo/main.pdf)
-  ctan.py validate|upload      отправить dist/guap.zip в API CTAN (email в CTAN_EMAIL)
+  ctan.py package              dist/suai-report.zip (нужен собранный demo/main.pdf)
+  ctan.py validate|upload      отправить dist/suai-report.zip в API CTAN (email в CTAN_EMAIL)
   ctan.py published            yes, если эта версия уже на CTAN
   ctan.py form                 поля для ручной загрузки через форму на ctan.org
-  ctan.py release VERSION      поднять версию в guap.sty и CHANGELOG
+  ctan.py release VERSION      поднять версию в suai-report.sty и CHANGELOG
 
 Метаданные пакета лежат в ctan/ctan.json. API: https://ctan.org/help/submit
 """
@@ -27,27 +27,27 @@ import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-STY = REPO / "src" / "guap.sty"
+STY = REPO / "src" / "suai-report.sty"
 CHANGELOG = REPO / "CHANGELOG.md"
 META = REPO / "ctan" / "ctan.json"
 DIST = REPO / "dist"
-ZIP = DIST / "guap.zip"
+ZIP = DIST / "suai-report.zip"
 
 API = "https://ctan.org/submit"
-PKG_JSON = "https://ctan.org/json/2.0/pkg/guap"
+PKG_JSON = "https://ctan.org/json/2.0/pkg/suai-report"
 ANNOUNCE = "<!-- announce -->"
 
-PROVIDES_RE = re.compile(r"(\\ProvidesPackage\{guap\}\[)(\d{4}/\d{2}/\d{2}) v([\d.]+)( )")
+PROVIDES_RE = re.compile(r"(\\ProvidesPackage\{suai-report\}\[)(\d{4}/\d{2}/\d{2}) v([\d.]+)( )")
 VERSION_RE = re.compile(r"^\d+\.\d+(\.\d+)?$")
 SECTION_RE = re.compile(r"^## (\S+)(?: — (\d{4}-\d{2}-\d{2}))?\s*$", re.M)
 
 FILES = {
     "README.md": "ctan/README.md",
     "LICENSE": "LICENSE",
-    "guap.sty": "src/guap.sty",
-    "guap-template.tex": "src/template.tex",
-    "guap-demo.tex": "demo/main.tex",
-    "guap-demo.pdf": "demo/main.pdf",
+    "suai-report.sty": "src/suai-report.sty",
+    "suai-report-template.tex": "src/template.tex",
+    "suai-report-demo.tex": "demo/main.tex",
+    "suai-report-demo.pdf": "demo/main.pdf",
 }
 FIELD_LIMITS = {"summary": 128, "description": 4096, "announcement": 8192}
 
@@ -60,7 +60,7 @@ def die(msg: str) -> None:
 def sty_version(text: str | None = None) -> tuple[str, str]:
     m = PROVIDES_RE.search(text if text is not None else STY.read_text(encoding="utf-8"))
     if not m:
-        die(f"в {STY.name} не найден \\ProvidesPackage{{guap}}[ГГГГ/ММ/ДД vX.Y ...]")
+        die(f"в {STY.name} не найден \\ProvidesPackage{{suai-report}}[ГГГГ/ММ/ДД vX.Y ...]")
     return m.group(3), m.group(2).replace("/", "-")
 
 
@@ -91,13 +91,13 @@ def check_tag(tag: str, sty_text: str, changelog: str) -> list[str]:
     version, date = sty_version(sty_text)
     errors = []
     if tag != f"v{version}":
-        errors.append(f"тег {tag} не совпадает с версией v{version} в guap.sty")
+        errors.append(f"тег {tag} не совпадает с версией v{version} в suai-report.sty")
     found = section(changelog, version)
     if found is None:
         errors.append(f"в CHANGELOG.md нет раздела «## {version} — {date}»")
     elif found[0] != date:
         errors.append(f"дата раздела {version} в CHANGELOG.md ({found[0]}) "
-                      f"не совпадает с датой в guap.sty ({date})")
+                      f"не совпадает с датой в suai-report.sty ({date})")
     elif not notes(changelog, version):
         errors.append(f"раздел {version} в CHANGELOG.md пустой")
     return errors
@@ -139,12 +139,12 @@ def forbidden(name: str) -> str | None:
         return "недопустимое имя файла"
     if re.search(r"\.(aux|log|toc|out|bbl|blg|bcf|fls|fdb_latexmk|synctex(\.gz)?|xdv|run\.xml)$", name):
         return "служебный файл сборки"
-    if name.endswith(".pdf") and name != "guap-demo.pdf":
+    if name.endswith(".pdf") and name != "suai-report-demo.pdf":
         return "лишний PDF"
     return None
 
 
-def build_zip(entries: dict[str, bytes], dest: Path, pkg: str = "guap") -> None:
+def build_zip(entries: dict[str, bytes], dest: Path, pkg: str = "suai-report") -> None:
     bad = [f"{n}: {r}" for n in entries if (r := forbidden(n))]
     if bad:
         die("CTAN не примет архив:\n  " + "\n  ".join(bad))
@@ -227,7 +227,7 @@ def submit(action: str) -> None:
     # upload не повторяется: при оборванном ответе пакет мог уже уйти на CTAN
     status, raw = fetch(req, attempts=3 if action == "validate" else 1)
     ok, lines = parse_response(status, raw)
-    print(f"CTAN {action} guap {version}: HTTP {status}")
+    print(f"CTAN {action} suai {version}: HTTP {status}")
     for line in lines:
         print(f"  {line}")
     if not ok:
@@ -291,7 +291,7 @@ def cmd_release(version: str) -> None:
                                   version, datetime.date.today())
     STY.write_text(new_sty, encoding="utf-8")
     CHANGELOG.write_text(new_changelog, encoding="utf-8")
-    print(f"guap.sty и CHANGELOG.md: версия {version}")
+    print(f"suai-report.sty и CHANGELOG.md: версия {version}")
 
 
 def main() -> None:

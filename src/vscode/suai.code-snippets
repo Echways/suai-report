@@ -1,24 +1,24 @@
 {
-  // Начни набирать команду (\guapta или просто guapta) и нажми Tab.
+  // Начни набирать команду (\suaita или просто suaita) и нажми Tab.
   // Префикс с \ заменяет набранный слэш, поэтому двойного \\ не будет.
   // Блоки (список, таблица, формула, источники) заканчиваются ПУСТОЙ строкой.
   "ГУАП: рисунок": {
     "scope": "latex",
-    "prefix": ["\\guapimg", "img", "рис"],
+    "prefix": ["\\suaiimg", "img", "рис"],
     "body": [
       "Схема приведена на~\\figref{${1:scheme}}.",
       "",
-      "\\guapimg{${1:scheme}}{${2:Подпись без точки}}",
+      "\\suaiimg{${1:scheme}}{${2:Подпись без точки}}",
       "$0"
     ]
   },
   "ГУАП: таблица": {
     "scope": "latex",
-    "prefix": ["\\guaptable", "tab", "табл"],
+    "prefix": ["\\suaitable", "tab", "табл"],
     "body": [
       "Данные приведены в~\\tabref{${1:name}}.",
       "",
-      "\\guaptable[${1:name}]{${2:Название таблицы}}",
+      "\\suaitable[${1:name}]{${2:Название таблицы}}",
       "${3:Параметр}  | ${4:Значение}",
       "${5:Процессор} | ${6:8 ядер}",
       "${7:Память}    | ${8:16 ГБ}",
@@ -28,9 +28,9 @@
   },
   "ГУАП: задачи": {
     "scope": "latex",
-    "prefix": ["\\guaptasks", "tasks"],
+    "prefix": ["\\suaitasks", "tasks"],
     "body": [
-      "\\guaptasks",
+      "\\suaitasks",
       "${1:изучить теоретический материал}",
       "${2:выполнить практическое задание}",
       "${3:проанализировать результаты}",
@@ -40,25 +40,25 @@
   },
   "ГУАП: перечисление а) б) в)": {
     "scope": "latex",
-    "prefix": ["\\guapenum", "enum"],
-    "body": ["\\guapenum", "${1:первый пункт}", "${2:второй пункт}", "$0", ""]
+    "prefix": ["\\suaienum", "enum"],
+    "body": ["\\suaienum", "${1:первый пункт}", "${2:второй пункт}", "$0", ""]
   },
   "ГУАП: перечисление через дефис": {
     "scope": "latex",
-    "prefix": ["\\guaplist", "list"],
-    "body": ["\\guaplist", "${1:первый пункт}", "${2:второй пункт}", "$0", ""]
+    "prefix": ["\\suailist", "list"],
+    "body": ["\\suailist", "${1:первый пункт}", "${2:второй пункт}", "$0", ""]
   },
   "ГУАП: перечисление 1) 2) 3)": {
     "scope": "latex",
-    "prefix": ["\\guapnum", "num"],
-    "body": ["\\guapnum", "${1:первый шаг}", "${2:второй шаг}", "$0", ""]
+    "prefix": ["\\suainum", "num"],
+    "body": ["\\suainum", "${1:первый шаг}", "${2:второй шаг}", "$0", ""]
   },
   "ГУАП: формула с пояснениями": {
     "scope": "latex",
-    "prefix": ["\\guapeq", "eq"],
+    "prefix": ["\\suaieq", "eq"],
     "body": [
       "Значение рассчитывается по~\\formref{${1:name}}:",
-      "\\guapeq[${1:name}]{${2:y = kx + b}}",
+      "\\suaieq[${1:name}]{${2:y = kx + b}}",
       "${3:y} | ${4:искомая величина}",
       "${5:k} | ${6:коэффициент наклона}",
       "$0",
@@ -78,9 +78,9 @@
   },
   "ГУАП: код из файла": {
     "scope": "latex",
-    "prefix": ["\\guapcode", "code"],
+    "prefix": ["\\suaicode", "code"],
     "body": [
-      "\\guapcode[${1|Python,C,C++,Java,SQL,bash,HTML|}]{${2:main.py}}{${3:Подпись}}",
+      "\\suaicode[${1|Python,C,C++,Java,SQL,bash,HTML|}]{${2:main.py}}{${3:Подпись}}",
       "$0"
     ]
   },
@@ -91,19 +91,19 @@
   },
   "ГУАП: введение": {
     "scope": "latex",
-    "prefix": ["\\guapintro"],
-    "body": ["\\guapintro", "", "Цель работы — $0"]
+    "prefix": ["\\suaiintro"],
+    "body": ["\\suaiintro", "", "Цель работы — $0"]
   },
   "ГУАП: заключение": {
     "scope": "latex",
-    "prefix": ["\\guapconclusion"],
-    "body": ["\\guapconclusion", "", "В ходе работы $0"]
+    "prefix": ["\\suaiconclusion"],
+    "body": ["\\suaiconclusion", "", "В ходе работы $0"]
   },
   "ГУАП: источники": {
     "scope": "latex",
-    "prefix": ["\\guapsources", "src"],
+    "prefix": ["\\suaisources", "src"],
     "body": [
-      "\\guapsources",
+      "\\suaisources",
       "${1:Фамилия И. О. Название. Город: Издательство, 2026. 100 с.}",
       "${2:Название ресурса. URL: https://example.com (дата обращения: ${CURRENT_DATE}.${CURRENT_MONTH}.${CURRENT_YEAR}).}",
       "$0",
@@ -112,7 +112,7 @@
   },
   "ГУАП: приложение": {
     "scope": "latex",
-    "prefix": ["\\guapapp", "app", "прил"],
-    "body": ["\\guapapp${1:[справочное]}{${2:Название}}", "", "$0"]
+    "prefix": ["\\suaiapp", "app", "прил"],
+    "body": ["\\suaiapp${1:[справочное]}{${2:Название}}", "", "$0"]
   }
 }

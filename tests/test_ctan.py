@@ -10,7 +10,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import ctan  # noqa: E402
 
-STY = "\\NeedsTeXFormat{LaTeX2e}\n\\ProvidesPackage{guap}[2026/09/14 v2.0 GUAP report]\n"
+STY = "\\NeedsTeXFormat{LaTeX2e}\n\\ProvidesPackage{suai-report}[2026/09/14 v2.0 SUAI report]\n"
 
 CHANGELOG = """# Изменения
 
@@ -90,7 +90,7 @@ class BumpTest(unittest.TestCase):
     def test_bump(self):
         sty, log = ctan.bump(STY, CHANGELOG, "2.1", self.DATE)
         self.assertEqual(ctan.sty_version(sty), ("2.1", "2026-10-01"))
-        self.assertIn("GUAP report]", sty)
+        self.assertIn("SUAI report]", sty)
         self.assertIn("## Unreleased\n\n## 2.1 — 2026-10-01\n\n- new thing", log)
         self.assertEqual(ctan.check_tag("v2.1", sty, log), [])
         self.assertEqual(ctan.notes(log, "Unreleased"), "")
@@ -111,28 +111,28 @@ class BumpTest(unittest.TestCase):
 
 class ArchiveTest(unittest.TestCase):
     def test_forbidden(self):
-        self.assertIsNone(ctan.forbidden("guap.sty"))
+        self.assertIsNone(ctan.forbidden("suai-report.sty"))
         self.assertIsNone(ctan.forbidden("images/scheme.png"))
-        self.assertIsNone(ctan.forbidden("guap-demo.pdf"))
+        self.assertIsNone(ctan.forbidden("suai-report-demo.pdf"))
         for name in (".gitignore", "images/.DS_Store", "main.log", "build/main.aux",
                      "main.pdf", "картинка.png", "my dir/a.tex"):
             self.assertIsNotNone(ctan.forbidden(name), name)
 
     def test_zip_layout(self):
         with tempfile.TemporaryDirectory() as tmp:
-            dest = Path(tmp) / "guap.zip"
-            ctan.build_zip({"guap.sty": b"x", "images/a.png": b"y"}, dest)
+            dest = Path(tmp) / "suai-report.zip"
+            ctan.build_zip({"suai-report.sty": b"x", "images/a.png": b"y"}, dest)
             with zipfile.ZipFile(dest) as z:
-                self.assertEqual(z.namelist(), ["guap/guap.sty", "guap/images/a.png"])
-                self.assertEqual(z.getinfo("guap/guap.sty").external_attr >> 16, 0o644)
+                self.assertEqual(z.namelist(), ["suai-report/images/a.png", "suai-report/suai-report.sty"])
+                self.assertEqual(z.getinfo("suai-report/suai-report.sty").external_attr >> 16, 0o644)
             first = dest.read_bytes()
-            ctan.build_zip({"guap.sty": b"x", "images/a.png": b"y"}, dest)
+            ctan.build_zip({"suai-report.sty": b"x", "images/a.png": b"y"}, dest)
             self.assertEqual(dest.read_bytes(), first)
 
     def test_zip_rejects_forbidden(self):
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaises(SystemExit):
-                ctan.build_zip({".vscode/settings.json": b"{}"}, Path(tmp) / "guap.zip")
+                ctan.build_zip({".vscode/settings.json": b"{}"}, Path(tmp) / "suai-report.zip")
 
     def test_repo_entries_are_accepted(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -145,7 +145,7 @@ class ArchiveTest(unittest.TestCase):
             (repo / "CHANGELOG.md").write_text(CHANGELOG, encoding="utf-8")
             entries = ctan.archive_entries(repo)
             self.assertIn("README.md", entries)
-            self.assertIn("guap-demo.pdf", entries)
+            self.assertIn("suai-report-demo.pdf", entries)
             self.assertIn("images/scheme.png", entries)
             self.assertEqual([n for n in entries if ctan.forbidden(n)], [])
 
@@ -172,12 +172,12 @@ class ApiTest(unittest.TestCase):
             ctan.fields({"summary": "x" * 129}, "2.0", "a@example.org", "")
 
     def test_multipart(self):
-        body, ctype = ctan.multipart([("pkg", "guap"), ("topic", "a"), ("topic", "b")],
-                                     "guap.zip", b"ZIPDATA")
+        body, ctype = ctan.multipart([("pkg", "suai-report"), ("topic", "a"), ("topic", "b")],
+                                     "suai-report.zip", b"ZIPDATA")
         boundary = ctype.split("boundary=")[1]
         self.assertTrue(ctype.startswith("multipart/form-data"))
         self.assertEqual(body.count(b'name="topic"'), 2)
-        self.assertIn(b'filename="guap.zip"', body)
+        self.assertIn(b'filename="suai-report.zip"', body)
         self.assertIn(b"ZIPDATA", body)
         self.assertTrue(body.endswith(f"--{boundary}--\r\n".encode()))
 

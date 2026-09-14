@@ -7,7 +7,7 @@ on:
   workflow_call:
 
 jobs:
-  # Логика команды guap, TeX не нужен
+  # Логика команды suai, TeX не нужен
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -20,8 +20,8 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m unittest discover -s tests -v
 
-  # Сборка тем же guap build, что и локально: аргументы latexmk
-  # из src/vscode/settings.json, guap.sty находится через TEXINPUTS
+  # Сборка тем же suai build, что и локально: аргументы latexmk
+  # из src/vscode/settings.json, suai-report.sty находится через TEXINPUTS
   pdf:
     needs: test
     runs-on: ubuntu-latest
@@ -33,12 +33,12 @@ jobs:
         run: command -v python3 || (apt-get update && apt-get install -y --no-install-recommends python3)
 
       - name: Демо-отчёт
-        run: python3 scripts/guap.py build demo
+        run: python3 scripts/suai.py build demo
 
       - name: Заготовка, созданная генератором
         run: |
-          python3 scripts/guap.py new ci/lab-1 --no-open --title "Проверка"
-          python3 scripts/guap.py build ci/lab-1
+          python3 scripts/suai.py new ci/lab-1 --no-open --title "Проверка"
+          python3 scripts/suai.py build ci/lab-1
 
       - uses: actions/upload-artifact@v4
         if: always()
