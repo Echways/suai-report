@@ -4,7 +4,11 @@
 пометке `<!-- announce -->` ещё и в рассылку CTAN. Новое пишется под
 `## Unreleased`, `make release VERSION=…` сам превратит его в раздел версии.
 
-## Unreleased
+## 2.1 - 2026-09-15
+
+- `\suaisetup` values may contain commas without braces, e.g.
+  `teacher-post = доцент, канд. техн. наук`.
+- Text too wide for a title page field wraps upwards instead of overflowing.
 
 ## 2.0 — 2026-09-14
 

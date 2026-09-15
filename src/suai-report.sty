@@ -264,7 +264,42 @@
     year         .tl_set:c    = suai@year,
     year         .initial:x   = \int_use:N \c_sys_year_int,
   }
-\NewDocumentCommand \suaisetup { m } { \keys_set:nn { suai } {#1} }
+% запятая без «=» продолжает значение предыдущего ключа:
+% teacher-post = доцент, канд. техн. наук -> {доцент, канд. техн. наук}
+\tl_new:N \l__suai_key_tl
+\tl_new:N \l__suai_value_tl
+\bool_new:N \l__suai_key_bool
+\cs_new_protected:Npn \__suai_setup_flush:
+  {
+    \bool_if:NT \l__suai_key_bool
+      {
+        \use:x
+          {
+            \exp_not:N \keys_set:nn { suai }
+              { \exp_not:V \l__suai_key_tl = { \exp_not:V \l__suai_value_tl } }
+          }
+        \bool_set_false:N \l__suai_key_bool
+      }
+  }
+\cs_new_protected:Npn \__suai_setup_item:n #1
+  {
+    \bool_if:NTF \l__suai_key_bool
+      { \tl_put_right:Nn \l__suai_value_tl { ,~ #1 } }
+      { \keys_set:nn { suai } {#1} }
+  }
+\cs_new_protected:Npn \__suai_setup_pair:nn #1#2
+  {
+    \__suai_setup_flush:
+    \tl_set:Nn \l__suai_key_tl {#1}
+    \tl_set:Nn \l__suai_value_tl {#2}
+    \bool_set_true:N \l__suai_key_bool
+  }
+\NewDocumentCommand \suaisetup { m }
+  {
+    \bool_set_false:N \l__suai_key_bool
+    \keyval_parse:nnn \__suai_setup_item:n \__suai_setup_pair:nn {#1}
+    \__suai_setup_flush:
+  }
 
 % date = today -> ДД.ММ.ГГГГ на момент сборки
 \cs_new:Npn \__suai_two_digits:n #1
@@ -288,9 +323,16 @@
 
 % ширина по бланку: #1 из 48135 (вся строка бланка — 481,35 pt)
 \newcommand\suai@tw[1]{\dimexpr\textwidth*#1/48135\relax}
-% ячейка с текстом над линией
+% ячейка с текстом над линией; длинный текст переносится вверх
+\newsavebox\suai@cellbox
 \newcommand\suai@cell[2]{%
-  \makebox[#1][c]{#2}\kern-#1\rule[-3.25bp]{#1}{0.5bp}}
+  \sbox\suai@cellbox{#2}%
+  \ifdim\wd\suai@cellbox>#1\relax
+    \parbox[b]{#1}{\centering#2}%
+  \else
+    \makebox[#1][c]{\usebox\suai@cellbox}%
+  \fi
+  \kern-#1\rule[-3.25bp]{#1}{0.5bp}}
 % подпись под линией
 \newcommand\suai@cap[2]{\makebox[#1][c]{\fontsize{10.0375}{11.5bp}\selectfont#2}}
 % #1 — расстояние от предыдущей базовой линии, #2 — кегль,
