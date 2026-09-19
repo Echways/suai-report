@@ -43,7 +43,20 @@ def read_setup(tex: Path) -> str | None:
     return m.group(0) if m else None
 
 
-def find_setup_source(target: Path) -> Path:
+def read_setup_dir(d: Path) -> str | None:
+    return read_setup(d / "main.tex") if (d / "main.tex").is_file() else None
+
+
+def tex_value(text: str) -> str:
+    """% и # в значении \\suaisetup закомментировали бы строку целиком."""
+    return re.sub(r"(?<!\\)([%#])", r"\\\1", text)
+
+
+def find_setup_source(target: Path, prefer: Path | None = None) -> Path:
+    """Титул из prefer (для next — из текущего отчёта), иначе из самого
+    свежего соседнего, иначе из демо."""
+    if prefer is not None and read_setup_dir(prefer):
+        return prefer / "main.tex"
     siblings = [
         p for p in target.parent.glob("*/main.tex")
         if p.parent.resolve() != target.resolve() and read_setup(p)
@@ -74,15 +87,16 @@ def set_key(block: str, key: str, value: str) -> str:
     return "\n".join(lines)
 
 
-def render_main(target: Path, title: str | None) -> tuple[str, Path]:
-    source = find_setup_source(target)
+def render_main(target: Path, title: str | None,
+                prefer: Path | None = None) -> tuple[str, Path]:
+    source = find_setup_source(target, prefer)
     setup = read_setup(source)
     if setup is None:
         die(f"в {source} нет блока \\suaisetup")
 
     num = TRAILING_NUM_RE.search(target.name)
     setup = set_key(setup, "number", str(int(num.group(1))) if num else "")
-    setup = set_key(setup, "title", title or "Название работы")
+    setup = set_key(setup, "title", tex_value(title) if title else "Название работы")
     setup = set_key(setup, "date", "today")
 
     skeleton = TEMPLATE.read_text(encoding="utf-8")
@@ -112,8 +126,11 @@ def latexmk_args() -> list[str]:
 
 
 def texmf_sty() -> Path:
-    home = subprocess.run(["kpsewhich", "-var-value", "TEXMFHOME"],
-                          capture_output=True, text=True).stdout.strip()
+    try:
+        home = subprocess.run(["kpsewhich", "-var-value", "TEXMFHOME"],
+                              capture_output=True, text=True).stdout.strip()
+    except OSError:
+        home = ""                       # TeX Live не установлен
     return Path(home or Path.home() / "texmf") / "tex" / "latex" / "suai-report" / "suai-report.sty"
 
 
@@ -126,9 +143,11 @@ def symlink(link: Path, target: Path) -> None:
 
 
 def open_editor(target: Path) -> None:
-    if shutil.which("code"):
-        subprocess.Popen(["code", str(target), str(target / "main.tex")],
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if shutil.which("code") is None:
+        print("  VS Code (code) не найден — открой папку сам")
+        return
+    subprocess.Popen(["code", str(target), str(target / "main.tex")],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def is_template_dir(path: Path) -> bool:
@@ -161,13 +180,14 @@ def cmd_uninstall() -> None:
             print(f"  удалено {path}")
 
 
-def cmd_new(target: Path, title: str | None, no_open: bool) -> None:
+def cmd_new(target: Path, title: str | None, no_open: bool,
+            prefer: Path | None = None) -> None:
     if (target / "main.tex").exists():
         die(f"{target / 'main.tex'} уже существует")
     if is_template_dir(target):
         die("нельзя создавать отчёт внутри шаблона")
 
-    main, source = render_main(target, title)
+    main, source = render_main(target, title, prefer)
     (target / "images").mkdir(parents=True, exist_ok=True)
     install_kit(target)
     (target / "main.tex").write_text(main, encoding="utf-8")
@@ -192,7 +212,7 @@ def cmd_next(title: str | None, no_open: bool) -> None:
         die(f"имя папки «{cwd.name}» не заканчивается номером (нужно вроде lab-3)")
     digits = m.group(1)
     name = cwd.name[: m.start()] + str(int(digits) + 1).zfill(len(digits))
-    cmd_new(cwd.parent / name, title, no_open)
+    cmd_new(cwd.parent / name, title, no_open, prefer=cwd)
 
 
 def cmd_update() -> None:
@@ -201,7 +221,7 @@ def cmd_update() -> None:
         die("это сам шаблон; update запускается в папке отчёта")
     report_dir(cwd)
     changed = install_kit(cwd)
-    print("Обновлено: " + ", ".join(changed) if changed else "Всё актуально")
+    print(f"Обновлено: {', '.join(changed)}" if changed else "Всё актуально")
 
 
 def run_latexmk(d: Path, *extra: str) -> None:
@@ -210,26 +230,57 @@ def run_latexmk(d: Path, *extra: str) -> None:
     try:
         subprocess.run(["latexmk", *latexmk_args(), *extra, "main.tex"],
                        cwd=d, env=env, check=True)
+    except FileNotFoundError:
+        die("не найден latexmk — нужен TeX Live")
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
     except KeyboardInterrupt:
         pass
 
 
+HELP = {
+    "new":       "новый отчёт в папке DIR",
+    "next":      "следующий отчёт рядом: lab-3 -> ../lab-4",
+    "install":   "suai-report.sty в ~/texmf, команда suai в ~/.local/bin",
+    "uninstall": "убрать установленное",
+    "update":    "обновить .vscode в текущем отчёте",
+    "build":     "собрать main.pdf",
+    "watch":     "пересобирать при каждом сохранении",
+    "open":      "собрать и открыть PDF",
+    "clean":     "удалить build/ и main.pdf",
+}
+
+
+def cmd_watch(d: Path) -> None:
+    run_latexmk(d, "-pvc", "-view=none")
+
+
+def cmd_open(d: Path) -> None:
+    run_latexmk(d)
+    subprocess.Popen(["xdg-open", str(d / "main.pdf")],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def cmd_clean(d: Path) -> None:
+    shutil.rmtree(d / "build", ignore_errors=True)
+    (d / "main.pdf").unlink(missing_ok=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    sub = parser.add_subparsers(dest="cmd", required=True)
+    sub = parser.add_subparsers(dest="cmd", required=True, metavar="КОМАНДА")
     for name in ("new", "next"):
-        p = sub.add_parser(name)
+        p = sub.add_parser(name, help=HELP[name])
         if name == "new":
-            p.add_argument("dir", type=Path)
-        p.add_argument("--title")
+            p.add_argument("dir", type=Path, help="папка нового отчёта")
+        p.add_argument("--title", help="название работы")
         p.add_argument("--no-open", action="store_true", help="не открывать VS Code")
     for name in ("install", "uninstall", "update"):
-        sub.add_parser(name)
+        sub.add_parser(name, help=HELP[name])
     for name in ("build", "watch", "open", "clean"):
-        sub.add_parser(name).add_argument("dir", type=Path, nargs="?")
+        sub.add_parser(name, help=HELP[name]).add_argument(
+            "dir", type=Path, nargs="?", help="папка отчёта (по умолчанию текущая)")
     args = parser.parse_args()
 
     if args.cmd == "new":
@@ -243,18 +294,8 @@ def main() -> None:
     elif args.cmd == "update":
         cmd_update()
     else:
-        d = report_dir(args.dir)
-        if args.cmd == "build":
-            run_latexmk(d)
-        elif args.cmd == "watch":
-            run_latexmk(d, "-pvc", "-view=none")
-        elif args.cmd == "open":
-            run_latexmk(d)
-            subprocess.Popen(["xdg-open", str(d / "main.pdf")],
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        else:
-            shutil.rmtree(d / "build", ignore_errors=True)
-            (d / "main.pdf").unlink(missing_ok=True)
+        {"build": run_latexmk, "watch": cmd_watch,
+         "open": cmd_open, "clean": cmd_clean}[args.cmd](report_dir(args.dir))
 
 
 if __name__ == "__main__":

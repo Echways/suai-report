@@ -16,7 +16,7 @@
 %%   8. Титульный лист
 %%=====================================================================
 \NeedsTeXFormat{LaTeX2e}[2021/11/15]
-\ProvidesPackage{suai-report}[2026/09/14 v2.0 SUAI GOST 7.32-2017 report]
+\ProvidesPackage{suai-report}[2026/09/15 v2.1 SUAI GOST 7.32-2017 report]
 
 \RequirePackage{iftex}
 \RequireXeTeX
@@ -34,8 +34,9 @@
 \RequirePackage{amsmath,amssymb}
 \RequirePackage{xcolor,graphicx,float}
 \RequirePackage{titlesec,tocloft,caption}
-\RequirePackage{array,multirow,xltabular}   % xltabular = tabularx + longtable
-\RequirePackage{enumitem,listings,csquotes}
+\RequirePackage{array,xltabular}            % xltabular = tabularx + longtable
+\RequirePackage{enumitem,listings}
+\RequirePackage{csquotes}                   % biblatex без него ругается
 
 %%---------------------------------------------------------------------
 %%  2. ШРИФТЫ
@@ -62,9 +63,17 @@
 %%---------------------------------------------------------------------
 %%  3. СТРАНИЦА И АБЗАЦ (ГОСТ 7.32-2017, п. 6.1)
 %%  Поля 30/15/20/20 мм. Правое 10 мм: \geometry{right=10mm}.
-%%  Интервал ровно как «1,5» в Word: \setstretch{1.25}.
+%%  \onehalfspacing даёт строку 21,25 pt (\baselinestretch = 1,25).
+%%  Ровно как «1,5» в Word (24 pt для Times 14 pt): \setstretch{1.42}.
+%%  Отступы вокруг формул — не меньше строки (п. 6.8.1); значение
+%%  берётся после выбора кегля, поэтому в \AtBeginDocument.
 %%---------------------------------------------------------------------
 \onehalfspacing
+\AtBeginDocument{%
+  \setlength{\abovedisplayskip}{\baselineskip}%
+  \setlength{\belowdisplayskip}{\baselineskip}%
+  \setlength{\abovedisplayshortskip}{\baselineskip}%
+  \setlength{\belowdisplayshortskip}{\baselineskip}}
 \setlength{\parindent}{1.25cm}
 \setlength{\parskip}{0pt}
 \clubpenalty=10000              % без висячих строк
@@ -84,13 +93,17 @@
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{3}
 
-% отступ — внутри метки: \raggedright обнуляет \leftskip из \titlespacing
+% Отступ — внутри метки: \raggedright обнуляет \leftskip из \titlespacing.
+% Своя длина, а не \parindent: тот же \raggedright обнуляет и \parindent,
+% поэтому внутри заголовка он уже равен нулю.
+\newlength{\suai@headindent}
+\AtBeginDocument{\setlength{\suai@headindent}{\parindent}}
 \titleformat{\section}[block]
-  {\suaiheadfont\raggedright}{\hspace*{\parindent}\thesection}{0.6em}{}
+  {\suaiheadfont\raggedright}{\hspace*{\suai@headindent}\thesection}{0.6em}{}
 \titleformat{\subsection}[block]
-  {\suaiheadfont\raggedright}{\hspace*{\parindent}\thesubsection}{0.6em}{}
+  {\suaiheadfont\raggedright}{\hspace*{\suai@headindent}\thesubsection}{0.6em}{}
 \titleformat{\subsubsection}[block]
-  {\suaiheadfont\raggedright}{\hspace*{\parindent}\thesubsubsection}{0.6em}{}
+  {\suaiheadfont\raggedright}{\hspace*{\suai@headindent}\thesubsubsection}{0.6em}{}
 \titleformat{name=\section,numberless}[block]
   {\suaiheadfont\filcenter}{}{0pt}{\MakeUppercase}
 \titlespacing{\section}{0pt}{0pt}{14pt}
@@ -128,14 +141,21 @@
 %%---------------------------------------------------------------------
 %%  5. ПОДПИСИ, ТАБЛИЦЫ, ПЕРЕЧИСЛЕНИЯ (ГОСТ 7.32-2017, пп. 6.5, 6.6;
 %%     ГОСТ 2.105: дефис либо строчная буква со скобкой)
-%%  «Рисунок 1 – Название» по центру под рисунком,
-%%  «Таблица 1 – Название» слева над таблицей.
+%%  «Рисунок 1 — Название» по центру под рисунком,
+%%  «Таблица 1 — Название» слева над таблицей,
+%%  «Листинг 1 — Название» слева над кодом.
+%%  Тире длинное, как в тексте ГОСТ; короткое: \captionsetup{labelsep=endash}.
+%%  stretch=1 — многострочная подпись набирается одинарным интервалом
+%%  (пп. 6.5.8, 6.6.3).
 %%---------------------------------------------------------------------
-\captionsetup{labelsep=endash,font=normalsize,skip=6pt}
+\DeclareCaptionLabelSeparator{emdash}{~--- }
+\captionsetup{labelsep=emdash,font={normalsize,stretch=1},skip=6pt}
 \captionsetup[figure]{name=Рисунок,position=below,
                       justification=centering,singlelinecheck=false}
 \captionsetup[table]{name=Таблица,position=above,
                      justification=raggedright,singlelinecheck=false}
+\captionsetup[lstlisting]{position=above,
+                          justification=raggedright,singlelinecheck=false}
 
 \renewcommand{\arraystretch}{1.25}
 \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
@@ -169,34 +189,48 @@
 
 %%---------------------------------------------------------------------
 %%  6. ЛИСТИНГИ
-%%  «Листинг 1 – Название» над кодом. Ч/б стиль gost — для печати,
+%%  «Листинг 1 — Название» над кодом. Ч/б стиль gost — для печати,
 %%  цветной для электронной версии: \lstset{style=gostcolor}.
+%%  Полужирного нет: по п. 6.1.1 он только для заголовков. Вернуть
+%%  выделение ключевых слов: \lstset{keywordstyle=\bfseries}.
 %%---------------------------------------------------------------------
 \renewcommand{\lstlistingname}{Листинг}
 \definecolor{suaiFrame}{HTML}{B5B5B5}
+\definecolor{suaiNumber}{HTML}{8A8A8A}
 \definecolor{suaiKeyword}{HTML}{0B4F9E}
 \definecolor{suaiComment}{HTML}{5C7A5C}
 \definecolor{suaiString}{HTML}{A03030}
-\definecolor{suaiBack}{HTML}{FAFAFA}
+\definecolor{suaiBack}{HTML}{F5F6F7}
+
+% Блок идёт от левого поля до правого, как таблица. Номера строк — внутри
+% рамки, в отдельной колонке шириной \suai@lstgutter (хватает на 3 цифры).
+\newlength{\suai@lstgutter}
+\setlength{\suai@lstgutter}{27pt}
+\newlength{\suai@lstsep}
+\setlength{\suai@lstsep}{7pt}
 
 \lstdefinestyle{gost}{
-  basicstyle=\ttfamily\fontsize{12}{14}\selectfont,
-  numbers=left, numberstyle=\ttfamily\fontsize{10}{12}\selectfont,
-  numbersep=10pt, stepnumber=1,
-  frame=single, rulecolor=\color{suaiFrame}, framesep=5pt,
+  basicstyle=\ttfamily\fontsize{12}{14.4}\selectfont,
+  numbers=left, numberstyle=\ttfamily\fontsize{10}{12}\selectfont
+                            \color{suaiNumber},
+  numbersep=9pt, stepnumber=1,
+  frame=single, rulecolor=\color{suaiFrame}, framesep=\suai@lstsep,
+  % listings рисует линию рамки ещё на framesep левее framexleftmargin,
+  % поэтому левый отступ блока — сумма: рамка встаёт ровно на поле
+  framexleftmargin=\suai@lstgutter,
+  xleftmargin=\dimexpr\suai@lstgutter+\suai@lstsep\relax,
+  xrightmargin=\suai@lstsep,
   breaklines=true, breakatwhitespace=true,
   postbreak=\mbox{\textcolor{suaiFrame}{$\hookrightarrow$}\space},
   showstringspaces=false, tabsize=4, columns=fullflexible,
   keepspaces=true, extendedchars=true, upquote=true,
-  captionpos=t, aboveskip=10pt, belowskip=10pt,
-  xleftmargin=\parindent, xrightmargin=0pt,
-  keywordstyle=\bfseries, commentstyle=\itshape,
-  stringstyle=\normalfont\ttfamily,
+  captionpos=t, aboveskip=12pt, belowskip=12pt,
+  commentstyle=\itshape, stringstyle=\normalfont\ttfamily,
 }
 \lstdefinestyle{gostcolor}{
   style=gost,
   backgroundcolor=\color{suaiBack},
-  keywordstyle=\bfseries\color{suaiKeyword},
+  keywordstyle=\color{suaiKeyword},
   commentstyle=\itshape\color{suaiComment},
   stringstyle=\color{suaiString},
 }
@@ -222,8 +256,9 @@
   \clearpage
   \stepcounter{suaiapp}%
   \phantomsection
+  % в содержании — обозначение, статус и наименование (п. 6.17.7)
   \addcontentsline{toc}{section}%
-    {\texorpdfstring{ПРИЛОЖЕНИЕ~\suaiappletter\ #2}{Прил. #2}}%
+    {\texorpdfstring{ПРИЛОЖЕНИЕ~\suaiappletter\ (#1)\ #2}{Прил. #2}}%
   \suai@appnumbering{figure}\suai@appnumbering{table}%
   \suai@appnumbering{equation}\suai@appnumbering{lstlisting}%
   {\centering
@@ -231,7 +266,7 @@
    \vspace{2pt}
    {\normalfont(#1)\par}
    \vspace{8pt}
-   {\suaiheadfont\MakeUppercase{#2}\par}}
+   {\suaiheadfont #2\par}}% заголовок — с прописной буквы (п. 6.17.3)
   \vspace{14pt}\par}
 
 %%---------------------------------------------------------------------
@@ -390,13 +425,12 @@
   \clearpage
   \restoregeometry
   \setcounter{page}{2}}% титул считается, но не нумеруется
-\newcommand{\suaititlepage}{\maketitle}
 
 %%---------------------------------------------------------------------
 %%  9. ССЫЛКИ, РИСУНКИ И КОД ИЗ ФАЙЛА
 %%  \figref{scheme} = «рисунке 1»; префикс метки (fig:) можно не писать.
 %%  \suaiimg[ширина]{файл}{подпись}[метка]  метка по умолчанию fig:имя-файла
-%%  \suaicode[язык]{файл}{подпись}[метка]   метка по умолчанию lst:файл,
+%%  \suaicode[язык]{файл}{подпись}[метка]   метка по умолчанию lst:имя-файла
 %%    файл ищется как есть, затем в code/
 %%---------------------------------------------------------------------
 \RequirePackage[hidelinks,bookmarksnumbered]{hyperref}
@@ -405,7 +439,8 @@
   \hypersetup{pdftitle={\suai@title}, pdfauthor={\suai@firststudent},
               pdflang={ru-RU}}}
 
-\newcommand{\suairef}[2]{\@ifundefined{r@#2}{\ref{#1:#2}}{\ref{#2}}}
+% метка без префикса — если \label{#2} есть, иначе \label{#1:#2}
+\newcommand{\suairef}[2]{\ifcsname r@#2\endcsname\ref{#2}\else\ref{#1:#2}\fi}
 \newcommand{\figref}[1]{рисунке~\suairef{fig}{#1}}
 \newcommand{\tabref}[1]{таблице~\suairef{tab}{#1}}
 \newcommand{\lstref}[1]{листинге~\suairef{lst}{#1}}
@@ -415,12 +450,18 @@
 \str_new:N \l__suai_dir_str
 \str_new:N \l__suai_name_str
 \str_new:N \l__suai_ext_str
+% code/backup.sh -> \suai@base = backup
+\cs_new_protected:cpn { suai@basename } #1
+  {
+    \file_parse_full_name:nNNN {#1}
+      \l__suai_dir_str \l__suai_name_str \l__suai_ext_str
+    \tl_set:cx { suai@base } { \l__suai_name_str }
+  }
 % images/scheme.png -> \label{fig:scheme}
 \cs_new_protected:cpn { suai@autolabel } #1#2
   {
-    \file_parse_full_name:nNNN {#2}
-      \l__suai_dir_str \l__suai_name_str \l__suai_ext_str
-    \use:x { \exp_not:N \label { #1 : \l__suai_name_str } }
+    \use:c { suai@basename } {#2}
+    \use:x { \exp_not:N \label { #1 : \use:c { suai@base } } }
   }
 \ExplSyntaxOff
 
@@ -434,7 +475,9 @@
 
 \NewDocumentCommand{\suaicode}{O{} m m o}{%
   \IfFileExists{#2}{\def\suai@codefile{#2}}{\def\suai@codefile{code/#2}}%
-  \IfNoValueTF{#4}{\def\suai@codelabel{lst:#2}}{\def\suai@codelabel{#4}}%
+  \IfNoValueTF{#4}%
+    {\suai@basename{#2}\edef\suai@codelabel{lst:\suai@base}}%
+    {\def\suai@codelabel{#4}}%
   \lstinputlisting[language={#1},caption={#3},label=\suai@codelabel]%
     {\suai@codefile}}
 
@@ -483,6 +526,9 @@
           \cs_set_eq:NN ~ \__suai_eol:
           \peek_meaning_remove:NTF \par
             { \__suai_lines_stop:n { \par } }
+            % обе ветки одинаковые: убрать перевод строки, если он есть,
+            % и начать читать. \__suai_line:w обязан стоять внутри ветки —
+            % после \peek_... его подхватил бы сам peek вместо строки файла.
             { \peek_meaning_remove:NTF \__suai_eol: { \__suai_line:w } { \__suai_line:w } }
         }
       \cs_new_protected:Npn \__suai_line:w #1 ~
@@ -505,18 +551,17 @@
       }
   }
 
+\clist_const:Nn \c__suai_stop_clist
+  {
+    par, begin, end, section, subsection, subsubsection, paragraph,
+    clearpage, newpage, maketitle, printbibliography,
+  }
 \cs_new_protected:Npn \__suai_check_cmd:w #1 #2 \q_stop
   {
     \token_if_cs:NT #1
       {
         \str_set:Nx \l__suai_cmd_str { \cs_to_str:N #1 }
-        \exp_args:NV \str_case:nnT \l__suai_cmd_str
-          {
-            { par } { } { begin } { } { end } { } { section } { }
-            { subsection } { } { subsubsection } { } { paragraph } { }
-            { clearpage } { } { newpage } { } { maketitle } { }
-            { printbibliography } { }
-          }
+        \exp_args:NNV \clist_if_in:NnT \c__suai_stop_clist \l__suai_cmd_str
           { \bool_set_true:N \l__suai_cmd_bool }
         \exp_args:Nx \str_if_eq:nnT
           { \str_range:Nnn \l__suai_cmd_str { 1 } { 4 } } { suai }
@@ -644,8 +689,8 @@
         \tl_put_right:Nx \l__suai_row_tl
           {
             \int_compare:nNnF {##1} = { 1 } { & }
-            \int_compare:nNnT {#1} = { 1 }
-              { \exp_not:N \centering \exp_not:N \bfseries }
+            % шапка — по центру, без полужирного (п. 6.1.1)
+            \int_compare:nNnT {#1} = { 1 } { \exp_not:N \centering }
             \seq_item:Nn \l__suai_cells_seq {##1}
           }
       }

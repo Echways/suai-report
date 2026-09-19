@@ -39,7 +39,9 @@ ANNOUNCE = "<!-- announce -->"
 
 PROVIDES_RE = re.compile(r"(\\ProvidesPackage\{suai-report\}\[)(\d{4}/\d{2}/\d{2}) v([\d.]+)( )")
 VERSION_RE = re.compile(r"^\d+\.\d+(\.\d+)?$")
-SECTION_RE = re.compile(r"^## (\S+)(?: — (\d{4}-\d{2}-\d{2}))?\s*$", re.M)
+# тире в заголовке — любое: обычный дефис в «## 2.1 - 2026-09-15» раньше
+# прятал весь раздел от check-tag, notes и архива для CTAN
+SECTION_RE = re.compile(r"^## (\S+)(?:\s*[-–—]\s*(\d{4}-\d{2}-\d{2}))?\s*$", re.M)
 
 FILES = {
     "README.md": "ctan/README.md",

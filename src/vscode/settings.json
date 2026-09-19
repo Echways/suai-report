@@ -39,6 +39,13 @@
   "latex-workshop.message.warning.show": false,
   "latex-workshop.message.badbox.show": "none",
 
+  // \figref{...} и остальные *ref подсказывают метки: LaTeX Workshop ищет
+  // их в \label{} и в командах отсюда, у которых метка — первый обязательный
+  // аргумент. У \suaiimg это имя файла: \suaiimg{scheme} -> \figref{scheme}.
+  // \suaitable[метка]{...} и \suaieq[метка]{...} держат метку в необязательном
+  // аргументе, туда расширение не смотрит — им метку подставляет сниппет.
+  "latex-workshop.intellisense.label.command": ["label", "linelabel", "suaiimg"],
+
   "files.exclude": { "**/build": true },
   // Сниппеты ГУАП: \suaita + Tab. Enter всегда даёт новую строку, подсказку
   // принимает только Tab. Слова из текста не подсказываются, иначе они

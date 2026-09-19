@@ -2,6 +2,7 @@
   // Начни набирать команду (\suaita или просто suaita) и нажми Tab.
   // Префикс с \ заменяет набранный слэш, поэтому двойного \\ не будет.
   // Блоки (список, таблица, формула, источники) заканчиваются ПУСТОЙ строкой.
+  // Первая табуляция — метка: она же уходит в \figref/\tabref/\lstref/\formref.
   "ГУАП: рисунок": {
     "scope": "latex",
     "prefix": ["\\suaiimg", "img", "рис"],
@@ -69,9 +70,9 @@
     "scope": "latex",
     "prefix": ["\\begin{code}", "lst"],
     "body": [
-      "Код приведён в~\\lstref{${3:name}}.",
+      "Код приведён в~\\lstref{${1:name}}.",
       "",
-      "\\begin{code}[${1|Python,C,C++,Java,SQL,bash,HTML|}, ${3:name}]{${2:Подпись}}",
+      "\\begin{code}[${2|Python,C,C++,Java,SQL,bash,HTML|}, ${1:name}]{${3:Подпись}}",
       "$0",
       "\\end{code}"
     ]
@@ -80,7 +81,9 @@
     "scope": "latex",
     "prefix": ["\\suaicode", "code"],
     "body": [
-      "\\suaicode[${1|Python,C,C++,Java,SQL,bash,HTML|}]{${2:main.py}}{${3:Подпись}}",
+      "Код приведён в~\\lstref{${1:name}}.",
+      "",
+      "\\suaicode[${2|Python,C,C++,Java,SQL,bash,HTML|}]{${3:main.py}}{${4:Подпись}}[lst:${1:name}]",
       "$0"
     ]
   },
@@ -89,14 +92,24 @@
     "prefix": ["\\section", "sec"],
     "body": ["\\section{${1:Название}}", "", "$0"]
   },
+  "ГУАП: структурный элемент без номера": {
+    "scope": "latex",
+    "prefix": ["\\suaisection"],
+    "body": ["\\suaisection{${1:Название}}", "", "$0"]
+  },
+  "ГУАП: содержание": {
+    "scope": "latex",
+    "prefix": ["\\suaitoc", "toc"],
+    "body": ["\\suaitoc", "", "$0"]
+  },
   "ГУАП: введение": {
     "scope": "latex",
-    "prefix": ["\\suaiintro"],
+    "prefix": ["\\suaiintro", "intro"],
     "body": ["\\suaiintro", "", "Цель работы — $0"]
   },
   "ГУАП: заключение": {
     "scope": "latex",
-    "prefix": ["\\suaiconclusion"],
+    "prefix": ["\\suaiconclusion", "concl"],
     "body": ["\\suaiconclusion", "", "В ходе работы $0"]
   },
   "ГУАП: источники": {
@@ -113,6 +126,30 @@
   "ГУАП: приложение": {
     "scope": "latex",
     "prefix": ["\\suaiapp", "app", "прил"],
-    "body": ["\\suaiapp${1:[справочное]}{${2:Название}}", "", "$0"]
+    "body": [
+      "\\suaiapp[${1|обязательное,рекомендуемое,справочное|}]{${2:Название}}",
+      "",
+      "$0"
+    ]
+  },
+  "ГУАП: ссылка на рисунок": {
+    "scope": "latex",
+    "prefix": ["\\figref"],
+    "body": ["\\figref{$1}$0"]
+  },
+  "ГУАП: ссылка на таблицу": {
+    "scope": "latex",
+    "prefix": ["\\tabref"],
+    "body": ["\\tabref{$1}$0"]
+  },
+  "ГУАП: ссылка на листинг": {
+    "scope": "latex",
+    "prefix": ["\\lstref"],
+    "body": ["\\lstref{$1}$0"]
+  },
+  "ГУАП: ссылка на формулу": {
+    "scope": "latex",
+    "prefix": ["\\formref"],
+    "body": ["\\formref{$1}$0"]
   }
 }

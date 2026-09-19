@@ -40,6 +40,11 @@ class VersionTest(unittest.TestCase):
         self.assertRegex(version, ctan.VERSION_RE)
         datetime.date.fromisoformat(date)
 
+    def test_section_accepts_any_dash(self):
+        for dash in ("-", "–", "—"):
+            text = f"# Изменения\n\n## 2.0 {dash} 2026-09-14\n\nBody.\n"
+            self.assertEqual(ctan.sections(text), [("2.0", "2026-09-14", "Body.")])
+
     def test_repo_changelog_matches_sty(self):
         version, _ = ctan.sty_version()
         errors = ctan.check_tag(f"v{version}", ctan.STY.read_text(encoding="utf-8"),

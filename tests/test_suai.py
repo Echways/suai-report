@@ -1,5 +1,3 @@
-"""Тесты команды suai (без TeX). Запуск: make test."""
-
 import contextlib
 import io
 import os
@@ -55,6 +53,10 @@ class SetKeyTest(unittest.TestCase):
         out = suai.set_key(block, "year", "2030")
         self.assertIn("% year = 2026,", out)
         self.assertIn("  year         = 2030,", out)
+
+    def test_tex_value_escapes_comment_chars(self):
+        self.assertEqual(suai.tex_value("Скидка 50% и #1"), r"Скидка 50\% и \#1")
+        self.assertEqual(suai.tex_value(r"уже \% экранирован"), r"уже \% экранирован")
 
     def test_split_comment_ignores_escaped_percent(self):
         self.assertEqual(suai.split_comment(r"a = 5\% x % c"), (r"a = 5\% x ", "% c"))
@@ -184,6 +186,23 @@ class NextTest(ReportTestCase):
         self.chdir(self.root / "lab-01")
         quiet(suai.cmd_next, None, True)
         self.assertTrue((self.root / "lab-02" / "main.tex").exists())
+
+    def test_prefers_own_title_page_over_newer_sibling(self):
+        cur = self.root / "lab-3"
+        cur.mkdir()
+        (cur / "main.tex").write_text(SETUP.replace("А. А. Преподов", "Свой"),
+                                      encoding="utf-8")
+        os.utime(cur / "main.tex", (1, 1))
+        other = self.root / "lab-9"
+        other.mkdir()
+        (other / "main.tex").write_text(SETUP.replace("А. А. Преподов", "Чужой"),
+                                        encoding="utf-8")
+
+        self.chdir(cur)
+        quiet(suai.cmd_next, None, True)
+        setup = suai.read_setup(self.root / "lab-4" / "main.tex")
+        self.assertIn("Свой", setup)
+        self.assertNotIn("Чужой", setup)
 
     def test_dir_without_number(self):
         (self.root / "notes").mkdir()
