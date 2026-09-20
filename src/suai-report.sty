@@ -16,7 +16,7 @@
 %%   8. Титульный лист
 %%=====================================================================
 \NeedsTeXFormat{LaTeX2e}[2021/11/15]
-\ProvidesPackage{suai-report}[2026/09/15 v2.1 SUAI GOST 7.32-2017 report]
+\ProvidesPackage{suai-report}[2026/09/21 v2.2 SUAI GOST 7.32-2017 report]
 
 \RequirePackage{iftex}
 \RequireXeTeX
@@ -632,49 +632,216 @@
 
 %%---------------------------------------------------------------------
 %% 12. ТАБЛИЦА
-%%  Ячейки через |, первая строка — шапка. Ширины столбцов — по длине
-%%  самого длинного текста (от 4 до 40 символов). Длинная таблица
-%%  переносится с «Продолжение таблицы N» и повтором шапки.
+%%  Ячейки через |, первая строка — шапка. Длинная таблица переносится
+%%  с «Продолжение таблицы N» и повтором шапки.
+%%  Ширины столбцов считаются по реально набранному тексту: минимум —
+%%  самое длинное слово столбца (уже его текст не сожмёшь, иначе он
+%%  вылезет за линейку), максимум — самая широкая ячейка в одну строку.
+%%  Свободное место сверх минимумов делится между столбцами
+%%  пропорционально их аппетиту (максимум минус минимум), как в
+%%  таблицах HTML. Если не хватает даже на минимумы, каждому столбцу
+%%  отдаётся его минимум, пока хватает доли, а слишком длинный текст
+%%  переносится по слогам — соседние столбцы он не задевает.
 %%---------------------------------------------------------------------
 \int_new:N \l__suai_cols_int
-\prop_new:N \l__suai_width_prop
+\prop_new:N \l__suai_min_prop        % pt: самое длинное слово столбца
+\prop_new:N \l__suai_max_prop        % pt: самая широкая ячейка столбца
+\prop_new:N \l__suai_wd_prop         % pt: итоговая ширина столбца
 \seq_new:N \l__suai_cells_seq
-\fp_new:N \l__suai_sum_fp
+\seq_new:N \l__suai_words_seq
+\box_new:N \l__suai_cell_box
+\tl_new:N \l__suai_col_tl
+\fp_new:N \l__suai_avail_fp
+\fp_new:N \l__suai_min_sum_fp
+\fp_new:N \l__suai_max_sum_fp
+\fp_new:N \l__suai_ratio_fp
+\fp_new:N \l__suai_free_fp
+\fp_new:N \l__suai_level_fp
+\int_new:N \l__suai_open_int
+\bool_new:N \l__suai_again_bool
 \tl_new:N \l__suai_spec_tl
 \tl_new:N \l__suai_head_tl
 \tl_new:N \l__suai_body_tl
 \tl_new:N \l__suai_row_tl
 \tl_new:N \l__suai_table_tl
 
-\cs_new:Npn \__suai_width:n #1
-  { \int_max:nn { 4 } { \int_min:nn { 40 } { \prop_item:Nn \l__suai_width_prop {#1} } } }
+% запас на случай, если набор в колонке окажется чуть шире измеренного
+\fp_const:Nn \c__suai_pad_fp { 1 }
 
-\cs_new_protected:Npn \__suai_table_measure:n #1
+\cs_new:Npn \__suai_min:n #1 { \prop_item:Nn \l__suai_min_prop {#1} }
+\cs_new:Npn \__suai_max:n #1 { \prop_item:Nn \l__suai_max_prop {#1} }
+
+% #1 — свойство, #2 — столбец, #3 — ширина: оставить бо́льшую
+\cs_new_protected:Npn \__suai_table_wider:Nnn #1#2#3
+  {
+    \prop_put:Nnx #1 {#2}
+      { \fp_eval:n { max ( \prop_item:Nn #1 {#2} , #3 ) } }
+  }
+
+% #1 — строка таблицы: столбцов столько, сколько в самой длинной строке
+\cs_new_protected:Npn \__suai_table_cols:n #1
   {
     \seq_set_split:Nnn \l__suai_cells_seq { | } {#1}
     \int_set:Nn \l__suai_cols_int
       { \int_max:nn { \l__suai_cols_int } { \seq_count:N \l__suai_cells_seq } }
-    \seq_map_indexed_function:NN \l__suai_cells_seq \__suai_table_measure:nn
-  }
-\cs_new_protected:Npn \__suai_table_measure:nn #1#2
-  {
-    \prop_put:Nnx \l__suai_width_prop {#1}
-      { \int_max:nn { 0 \prop_item:Nn \l__suai_width_prop {#1} } { \str_count:n {#2} } }
   }
 
-% столбец X с долей ширины по длине текста; первый — влево, остальные по центру
+% #1 — строка таблицы: измерить её ячейки
+\cs_new_protected:Npn \__suai_table_measure:n #1
+  {
+    \seq_set_split:Nnn \l__suai_cells_seq { | } {#1}
+    \seq_map_indexed_function:NN \l__suai_cells_seq \__suai_table_measure:nn
+  }
+
+% #1 — номер столбца, #2 — ячейка. Ячейка целиком даёт максимум,
+% каждое слово — минимум; слова в {} не делятся, так что \cmd{a b}
+% меряется целиком.
+\cs_new_protected:Npn \__suai_table_measure:nn #1#2
+  {
+    \tl_set:Nn \l__suai_col_tl {#1}
+    \hbox_set:Nn \l__suai_cell_box {#2}
+    \__suai_table_wider:Nnn \l__suai_max_prop {#1}
+      { \dim_to_fp:n { \box_wd:N \l__suai_cell_box } + \c__suai_pad_fp }
+    \seq_set_split:Nnn \l__suai_words_seq { ~ } {#2}
+    \seq_map_function:NN \l__suai_words_seq \__suai_table_word:n
+  }
+
+% #1 — слово; номер столбца лежит в \l__suai_col_tl
+\cs_new_protected:Npn \__suai_table_word:n #1
+  {
+    \hbox_set:Nn \l__suai_cell_box {#1}
+    \exp_args:NNV \__suai_table_wider:Nnn \l__suai_min_prop \l__suai_col_tl
+      { \dim_to_fp:n { \box_wd:N \l__suai_cell_box } + \c__suai_pad_fp }
+  }
+
+% под текст остаётся ширина полосы минус линейки и отбивки столбцов
+\cs_new_protected:Npn \__suai_table_widths:
+  {
+    \fp_set:Nn \l__suai_avail_fp
+      {
+        \dim_to_fp:n { \textwidth }
+          - ( \l__suai_cols_int + 1 ) * \dim_to_fp:n { \arrayrulewidth }
+          - 2 * \l__suai_cols_int * \dim_to_fp:n { \tabcolsep }
+      }
+    \fp_zero:N \l__suai_min_sum_fp
+    \fp_zero:N \l__suai_max_sum_fp
+    \int_step_inline:nn { \l__suai_cols_int }
+      {
+        \fp_add:Nn \l__suai_min_sum_fp { \__suai_min:n {##1} }
+        \fp_add:Nn \l__suai_max_sum_fp { \__suai_max:n {##1} }
+      }
+    \fp_compare:nNnTF { \l__suai_max_sum_fp } > { \l__suai_avail_fp }
+      {
+        \fp_compare:nNnTF { \l__suai_min_sum_fp } < { \l__suai_avail_fp }
+          { \__suai_table_share: }
+          { \__suai_table_squeeze: }
+      }
+      { \__suai_table_scale:Nn \l__suai_max_prop { \l__suai_max_sum_fp } }
+  }
+
+% #1 — свойство с ширинами, #2 — их сумма: растянуть (сжать) по полосе
+\cs_new_protected:Npn \__suai_table_scale:Nn #1#2
+  {
+    \int_step_inline:nn { \l__suai_cols_int }
+      {
+        \prop_put:Nnx \l__suai_wd_prop {##1}
+          {
+            \fp_eval:n
+              { \prop_item:Nn #1 {##1} * \l__suai_avail_fp / max ( #2 , 1 ) }
+          }
+      }
+  }
+
+% Места мало даже на слова: столбец, которому хватает доли, получает
+% свой минимум, остальные делят остаток поровну. Так за линейку вылезет
+% только слишком длинный текст, а соседние столбцы останутся целыми.
+\cs_new_protected:Npn \__suai_table_squeeze:
+  {
+    \fp_set_eq:NN \l__suai_free_fp \l__suai_avail_fp
+    \int_set_eq:NN \l__suai_open_int \l__suai_cols_int
+    \bool_set_true:N \l__suai_again_bool
+    \bool_do_while:Nn \l__suai_again_bool { \__suai_table_pass: }
+    \int_step_function:nN { \l__suai_cols_int } \__suai_table_rest:n
+  }
+
+% проход: доля растёт после каждого закреплённого столбца, поэтому
+% проходы повторяются, пока находится хоть один новый
+\cs_new_protected:Npn \__suai_table_pass:
+  {
+    \bool_set_false:N \l__suai_again_bool
+    \fp_set:Nn \l__suai_level_fp
+      { \l__suai_free_fp / max ( \l__suai_open_int , 1 ) }
+    \int_step_function:nN { \l__suai_cols_int } \__suai_table_lock:n
+  }
+
+% #1 — столбец: закрепить минимум, если он влезает в долю
+\cs_new_protected:Npn \__suai_table_lock:n #1
+  {
+    \prop_if_in:NnF \l__suai_wd_prop {#1}
+      {
+        \fp_compare:nNnF { \__suai_min:n {#1} } > { \l__suai_level_fp }
+          {
+            \prop_put:Nnx \l__suai_wd_prop {#1} { \fp_eval:n { \__suai_min:n {#1} } }
+            \fp_sub:Nn \l__suai_free_fp { \__suai_min:n {#1} }
+            \int_decr:N \l__suai_open_int
+            \bool_set_true:N \l__suai_again_bool
+          }
+      }
+  }
+
+% #1 — столбец: незакреплённым достаётся поровну то, что осталось
+\cs_new_protected:Npn \__suai_table_rest:n #1
+  {
+    \prop_if_in:NnF \l__suai_wd_prop {#1}
+      {
+        \prop_put:Nnx \l__suai_wd_prop {#1}
+          { \fp_eval:n { max ( \l__suai_free_fp / max ( \l__suai_open_int , 1 ) , 1 ) } }
+      }
+  }
+
+% минимум плюс доля свободного места по аппетиту столбца
+\cs_new_protected:Npn \__suai_table_share:
+  {
+    \fp_set:Nn \l__suai_ratio_fp
+      {
+        ( \l__suai_avail_fp - \l__suai_min_sum_fp )
+          / max ( \l__suai_max_sum_fp - \l__suai_min_sum_fp , 1 )
+      }
+    \int_step_inline:nn { \l__suai_cols_int }
+      {
+        \prop_put:Nnx \l__suai_wd_prop {##1}
+          {
+            \fp_eval:n
+              {
+                \__suai_min:n {##1}
+                  + ( \__suai_max:n {##1} - \__suai_min:n {##1} )
+                    * \l__suai_ratio_fp
+              }
+          }
+      }
+  }
+
+% столбец X с долей ширины по тексту; первый — влево, остальные по центру
 \cs_new_protected:Npn \__suai_table_spec:n #1
   {
     \tl_put_right:Nx \l__suai_spec_tl
       {
         | > {
           \exp_not:N \hsize =
-            \fp_eval:n { round ( \l__suai_cols_int * \__suai_width:n {#1} / \l__suai_sum_fp , 4 ) }
+            \fp_eval:n
+              {
+                round ( \l__suai_cols_int * \prop_item:Nn \l__suai_wd_prop {#1}
+                          / \l__suai_avail_fp , 4 )
+              }
             \exp_not:N \hsize
           \exp_not:N \linewidth = \exp_not:N \hsize
           \int_compare:nNnTF {#1} = { 1 }
             { \exp_not:N \raggedright } { \exp_not:N \centering }
           \exp_not:N \arraybackslash
+          % \hspace{0pt} даёт переносить первое слово ячейки: иначе TeX
+          % не переносит слово, перед которым нет клея, и слишком длинное
+          % слово вылезает за линейку
+          \exp_not:N \hspace { 0pt }
         } X
         \int_compare:nNnT {#1} = { \l__suai_cols_int } { | }
       }
@@ -706,11 +873,17 @@
     \seq_if_empty:NF \g__suai_lines_seq
       {
         \int_zero:N \l__suai_cols_int
-        \prop_clear:N \l__suai_width_prop
-        \seq_map_function:NN \g__suai_lines_seq \__suai_table_measure:n
-        \fp_zero:N \l__suai_sum_fp
+        \prop_clear:N \l__suai_min_prop
+        \prop_clear:N \l__suai_max_prop
+        \prop_clear:N \l__suai_wd_prop
+        \seq_map_function:NN \g__suai_lines_seq \__suai_table_cols:n
         \int_step_inline:nn { \l__suai_cols_int }
-          { \fp_add:Nn \l__suai_sum_fp { \__suai_width:n {##1} } }
+          {
+            \prop_put:Nnn \l__suai_min_prop {##1} { 0 }
+            \prop_put:Nnn \l__suai_max_prop {##1} { 0 }
+          }
+        \seq_map_function:NN \g__suai_lines_seq \__suai_table_measure:n
+        \__suai_table_widths:
         \tl_clear:N \l__suai_spec_tl
         \int_step_function:nN { \l__suai_cols_int } \__suai_table_spec:n
         \tl_clear:N \l__suai_head_tl

@@ -6,6 +6,16 @@
 
 ## Unreleased
 
+## 2.2 — 2026-09-21
+
+- Table columns are measured by the width of the typeset text instead of the
+  number of characters, so nothing runs over the rules any more. Every column
+  is at least as wide as its longest word, and what is left over is shared
+  out by how much width each column still wants. A narrow column such as
+  `НДФЛ` used to be squeezed below the width of its own heading.
+- A word that is still too long for its column is hyphenated rather than left
+  hanging over the rule: cells now begin with `\hspace{0pt}`, which is what
+  lets TeX break the first word of a cell.
 - Section headings start at the paragraph indent again (GOST 7.32-2017,
   6.2.3). The indent was written as `\hspace*{\parindent}` inside the
   title label, where `\raggedright` had already zeroed `\parindent`.
