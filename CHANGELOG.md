@@ -3,9 +3,6 @@
 Разделы пишутся по-английски: текст раздела уходит в GitHub Release, а при
 пометке `<!-- announce -->` ещё и в рассылку CTAN. Новое пишется под
 `## Unreleased`, `make release VERSION=…` сам превратит его в раздел версии.
-
-## Unreleased
-
 ## 2.2 — 2026-09-21
 
 - Table columns are measured by the width of the typeset text instead of the
