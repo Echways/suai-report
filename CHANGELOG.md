@@ -6,6 +6,40 @@
 
 ## Unreleased
 
+- Tables no longer run over the rules with long entries such as formulas,
+  cell ranges or identifiers (`='Журнал'!I6>СРЗНАЧ(БД_Фильтр)`). Each column
+  is measured at four widths — whole cell, whole words, pieces between
+  break points, syllables — and the table takes the widest level that
+  fits, sharing the rest by how much each column still wants. Words are
+  broken only when there is no other way, syllables last; a column holding
+  a long number or date is never narrower than it. Manual `\allowbreak`
+  in cells is no longer needed.
+- A line may break inside a long space-free "word" after `_ / = + ! -`, and
+  in monospaced text also after `. , ; : ? &` and before `(`/`[`
+  (`center.yandex.cloud`, `UPPER(TRIM(...))`), at the cost of a hyphen.
+  Not before a digit, so `1,5` and `01.01.2025` stay whole. Switch off
+  with `\XeTeXinterchartokenstate=0`.
+- `\tolerance=1000` and `\emergencystretch=3em`: a slightly looser line
+  instead of one running into the margin.
+- Listings break long lines without spaces too (`breakatwhitespace=false`).
+- `\suaiimg` never makes a figure wider than the text block.
+- VS Code: LaTeX Workshop now knows the package (`.vscode/suai-report.json`)
+  and suggests `\suai...` commands with their arguments and a description,
+  and the keys of `\suaisetup`. Snippets are listed after LaTeX Workshop's
+  suggestions: with `"top"`, typing `\it` or `\begin{eq` and pressing Tab
+  inserted a template instead of `\item`. Only the templates that also write
+  the reference in the text are left (`img`, `tab`, `eq`, `lst`, `code`);
+  the `code` and `img` ones derive the label from the file name.
+  References suggest the labels of the last build (`fig:`, `tab:`, `eq:`,
+  `lst:`) instead of bare figure names next to prefixed duplicates.
+  `mathematic.vscode-latex` is marked as unwanted.
+- The finished PDF is named after the subject and report folders:
+  `Databases/lab-3/main.tex` gives `Databases-lab-3.pdf` instead of
+  `main.pdf`, ready to send. The build output and the VS Code preview stay
+  in `build/main.pdf`. `suai open` and `suai clean` know the new name;
+  `suai clean` also removes an old `main.pdf`. Existing reports get it
+  with `suai update`.
+
 ## 2.2 — 2026-09-21
 
 - Table columns are measured by the width of the typeset text instead of the

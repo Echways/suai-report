@@ -1,5 +1,5 @@
 #  make install           один раз: suai-report.sty в ~/texmf, команда suai в ~/.local/bin
-#  make                   собрать демо-отчёт demo/main.pdf
+#  make                   собрать демо-отчёт (PDF рядом с demo/main.tex)
 #  make watch             пересобирать демо при сохранении, в том числе src/suai-report.sty
 #  make open              собрать и открыть демо
 #  make test              тесты команды suai (без TeX)

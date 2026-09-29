@@ -1,6 +1,10 @@
 import contextlib
 import io
+import json
 import os
+import re
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -75,6 +79,30 @@ class SourcesTest(unittest.TestCase):
         self.assertNotIn("%DOC_EXT%", args)
         self.assertEqual(args[0], "-e")
         self.assertIn("$out_dir = q(build)", args[1])
+
+    @unittest.skipIf(shutil.which("perl") is None, "нет perl")
+    def test_pdf_name_matches_latexmk(self):
+        """PDF, который копирует сборка, и тот, что ищут open/clean, — один файл."""
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp) / "Базы данных" / "lab-3"
+            d.mkdir(parents=True)
+            code = suai.latexmk_args()[1] + "; print $suai_pdf"
+            out = subprocess.run(["perl", "-e", code], cwd=d, check=True,
+                                 capture_output=True).stdout.decode()
+            self.assertEqual(out, "Базы данных-lab-3.pdf")
+            self.assertEqual(suai.pdf_path(d), d.resolve() / out)
+
+    def test_intellisense_matches_package(self):
+        """suai-report.json описывает ровно пользовательские команды пакета."""
+        sty = suai.STY.read_text(encoding="utf-8")
+        defined = set(re.findall(
+            r"\\(?:NewDocumentCommand|newcommand)\s*\{?\s*\\([a-z]+)(?![@a-z])", sty))
+        public = {c for c in defined if c.startswith("suai") or c.endswith("ref")}
+        public -= {"suairef", "suaiappletter"}       # служебные
+        data = json.loads((suai.VSCODE / "suai-report.json").read_text(encoding="utf-8"))
+        described = {m["name"] for m in data["macros"]}
+        self.assertEqual(described, public)
+        self.assertEqual([e["name"] for e in data["envs"]], ["code"])
 
     def test_template_dir_detection(self):
         self.assertTrue(suai.is_template_dir(suai.REPO))

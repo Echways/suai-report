@@ -3,7 +3,7 @@
   ctan.py version              версия из \\ProvidesPackage в src/suai-report.sty
   ctan.py check-tag TAG        тег совпадает с версией, в CHANGELOG есть раздел
   ctan.py notes [--announce]   текст раздела текущей версии из CHANGELOG
-  ctan.py package              dist/suai-report.zip (нужен собранный demo/main.pdf)
+  ctan.py package              dist/suai-report.zip (нужен собранный demo/build/main.pdf)
   ctan.py validate|upload      отправить dist/suai-report.zip в API CTAN (email в CTAN_EMAIL)
   ctan.py published            yes, если эта версия уже на CTAN
   ctan.py form                 поля для ручной загрузки через форму на ctan.org
@@ -49,7 +49,7 @@ FILES = {
     "suai-report.sty": "src/suai-report.sty",
     "suai-report-template.tex": "src/template.tex",
     "suai-report-demo.tex": "demo/main.tex",
-    "suai-report-demo.pdf": "demo/main.pdf",
+    "suai-report-demo.pdf": "demo/build/main.pdf",
 }
 FIELD_LIMITS = {"summary": 128, "description": 4096, "announcement": 8192}
 

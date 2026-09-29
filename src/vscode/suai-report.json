@@ -1,0 +1,48 @@
+{
+  "deps": [{"name": "iftex"}, {"name": "fontspec"}, {"name": "babel"}, {"name": "geometry"}, {"name": "setspace"}, {"name": "indentfirst"}, {"name": "microtype"}, {"name": "amsmath"}, {"name": "amssymb"}, {"name": "xcolor"}, {"name": "graphicx"}, {"name": "float"}, {"name": "titlesec"}, {"name": "tocloft"}, {"name": "caption"}, {"name": "array"}, {"name": "tabularx"}, {"name": "longtable"}, {"name": "enumitem"}, {"name": "listings"}, {"name": "csquotes"}, {"name": "hyperref"}, {"name": "bookmark"}, {"name": "url"}],
+  "macros": [
+    {"name": "suaisetup", "arg": {"format": "{}", "snippet": "suaisetup{\n  ${1:title} = ${2:Название работы},\n}", "keys": ["\\suaisetup"], "keyPos": 0}, "doc": "Данные титульного листа: department, teacher-post, teacher, type, number, title, course, group, student, date, …"},
+    {"name": "suaitoc", "doc": "Содержание с новой страницы."},
+    {"name": "suaiintro", "doc": "ВВЕДЕНИЕ: структурный элемент без номера, с новой страницы."},
+    {"name": "suaiconclusion", "doc": "ЗАКЛЮЧЕНИЕ: структурный элемент без номера, с новой страницы."},
+    {"name": "suaisection", "arg": {"format": "{}", "snippet": "suaisection{${1:Название}}"}, "doc": "Структурный элемент без номера (прописными, по центру, с новой страницы)."},
+    {"name": "suaitasks", "arg": {"format": "", "snippet": "suaitasks\n${1:первая задача}\n${2:вторая задача}\n$0\n"}, "doc": "«Для достижения поставленной цели…» и задачи а), б), в). Строки под командой до пустой строки — задачи."},
+    {"name": "suaienum", "arg": {"format": "", "snippet": "suaienum\n${1:первый пункт}\n${2:второй пункт}\n$0\n"}, "doc": "Перечисление а), б), в): по пункту на строку до пустой строки. Со * — без ; и . в конце."},
+    {"name": "suailist", "arg": {"format": "", "snippet": "suailist\n${1:первый пункт}\n${2:второй пункт}\n$0\n"}, "doc": "Перечисление через дефис: по пункту на строку до пустой строки. Со * — без ; и . в конце."},
+    {"name": "suainum", "arg": {"format": "", "snippet": "suainum\n${1:первый шаг}\n${2:второй шаг}\n$0\n"}, "doc": "Перечисление 1), 2), 3): по пункту на строку до пустой строки. Со * — без ; и . в конце."},
+    {"name": "suaitable", "arg": {"format": "[]{}", "snippet": "suaitable[${1:метка}]{${2:Название таблицы}}\n${3:Параметр} | ${4:Значение}\n${5:ячейка} | ${6:ячейка}\n$0\n"}, "doc": "Таблица: ячейки через |, первая строка — шапка, до пустой строки. Метка tab:метка, ссылка \\tabref{метка}."},
+    {"name": "suaiimg", "arg": {"format": "{}{}", "snippet": "suaiimg{${1:файл}}{${2:Подпись}}"}, "doc": "Рисунок из images/, метка fig:файл, ссылка \\figref{файл}."},
+    {"name": "suaiimg", "arg": {"format": "[]{}{}", "snippet": "suaiimg[${1:0.5\\textwidth}]{${2:файл}}{${3:Подпись}}"}, "doc": "Рисунок заданной ширины (по умолчанию 0.8\\textwidth, не шире полосы)."},
+    {"name": "suaieq", "arg": {"format": "[]{}", "snippet": "suaieq[${1:метка}]{${2:формула}}\n${3:обозначение} | ${4:пояснение}\n$0\n"}, "doc": "Формула; строки «обозначение | смысл» под ней дают «где …». Метка eq:метка, ссылка \\formref{метка}."},
+    {"name": "suaicode", "arg": {"format": "[]{}{}", "snippet": "suaicode[${1|Python,C,C++,Java,SQL,bash,HTML|}]{${2:файл}}{${3:Подпись}}"}, "doc": "Листинг из файла (ищется и в code/), метка lst:имя-файла, ссылка \\lstref{имя-файла}."},
+    {"name": "suaisources", "arg": {"format": "", "snippet": "suaisources\n${1:Источник. URL: https://example.com (дата обращения: ${CURRENT_DATE}.${CURRENT_MONTH}.${CURRENT_YEAR}).}\n$0\n"}, "doc": "Список использованных источников: по источнику на строку до пустой строки. Без строк — \\printbibliography."},
+    {"name": "suaiapp", "arg": {"format": "{}", "snippet": "suaiapp{${1:Название}}"}, "doc": "Приложение А, Б, … (обязательное)."},
+    {"name": "suaiapp", "arg": {"format": "[]{}", "snippet": "suaiapp[${1|обязательное,рекомендуемое,справочное|}]{${2:Название}}"}, "doc": "Приложение со статусом."},
+    {"name": "figref", "arg": {"format": "{}", "snippet": "figref{${1}}"}, "doc": "«рисунке 1». Префикс fig: можно не писать."},
+    {"name": "tabref", "arg": {"format": "{}", "snippet": "tabref{${1}}"}, "doc": "«таблице 1». Префикс tab: можно не писать."},
+    {"name": "lstref", "arg": {"format": "{}", "snippet": "lstref{${1}}"}, "doc": "«листинге 1». Префикс lst: можно не писать."},
+    {"name": "formref", "arg": {"format": "{}", "snippet": "formref{${1}}"}, "doc": "«формуле (1)». Префикс eq: можно не писать."},
+    {"name": "suaiheadfont", "doc": "Шрифт заголовков; без полужирного: \\renewcommand{\\suaiheadfont}{\\normalfont\\fontsize{14}{17}\\selectfont}", "unusual": true}
+  ],
+  "envs": [
+    {"name": "code", "arg": {"format": "[]{}", "snippet": "[${1|Python,C,C++,Java,SQL,bash,HTML|}, ${2:метка}]{${3:Подпись}}"}}
+  ],
+  "keys": {
+    "\\suaisetup": [
+      "department=${1:41}",
+      "teacher-post=${1:Ассистент}",
+      "teacher=${1:И. И. Иванов}",
+      "type=${1:Отчет о лабораторной работе}",
+      "number=${1:1}",
+      "title=${1:Название работы}",
+      "course-label=${1:по курсу:}",
+      "course=${1:Название дисциплины}",
+      "group=${1:4414}",
+      "student=${1:И. И. Студентов}",
+      "date=${1|today|}",
+      "city=${1:Санкт-Петербург}",
+      "year=${1:2026}"
+    ]
+  },
+  "args": []
+}

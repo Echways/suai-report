@@ -46,7 +46,7 @@ jobs:
           name: pdf
           if-no-files-found: ignore
           path: |
-            demo/main.pdf
-            ci/lab-1/main.pdf
+            demo/build/main.pdf
+            ci/lab-1/build/main.pdf
             demo/build/main.log
             ci/lab-1/build/main.log

@@ -3,8 +3,9 @@
   // копируется командой suai new / suai update (правки копии затрутся).
   //
   // Сборка: XeLaTeX + Biber, служебное (и PDF с synctex) в build/, готовый
-  // main.pdf копируется рядом с main.tex. suai-report.sty ищется в ~/texmf (make install).
-  // Эти же аргументы использует команда suai build/watch.
+  // PDF копируется рядом с main.tex под именем из двух папок:
+  // Databases/lab-3/main.tex -> Databases-lab-3.pdf. suai-report.sty ищется
+  // в ~/texmf (make install). Эти же аргументы использует команда suai build/watch.
   "latex-workshop.latex.recipes": [
     { "name": "ГУАП (latexmk)", "tools": ["suai-latexmk"] }
   ],
@@ -13,7 +14,7 @@
       "name": "suai-latexmk",
       "command": "latexmk",
       "args": [
-        "-e", "$pdf_mode = 5; $bibtex_use = 2; $out_dir = q(build); $xelatex = q(xelatex -synctex=1 -interaction=nonstopmode -file-line-error -halt-on-error %O %S); $xdvipdfmx = q(xdvipdfmx -E -o %D %O %S && cp %D %R.pdf)",
+        "-e", "$pdf_mode = 5; $bibtex_use = 2; $out_dir = q(build); $xelatex = q(xelatex -synctex=1 -interaction=nonstopmode -file-line-error -halt-on-error %O %S); use Cwd; my @d = split m{/}, getcwd(); $suai_pdf = qq($d[-2]-$d[-1].pdf); $xdvipdfmx = qq(xdvipdfmx -E -o %D %O %S && cp %D '$suai_pdf')",
         "%DOC_EXT%"
       ]
     }
@@ -39,21 +40,23 @@
   "latex-workshop.message.warning.show": false,
   "latex-workshop.message.badbox.show": "none",
 
-  // \figref{...} и остальные *ref подсказывают метки: LaTeX Workshop ищет
-  // их в \label{} и в командах отсюда, у которых метка — первый обязательный
-  // аргумент. У \suaiimg это имя файла: \suaiimg{scheme} -> \figref{scheme}.
-  // \suaitable[метка]{...} и \suaieq[метка]{...} держат метку в необязательном
-  // аргументе, туда расширение не смотрит — им метку подставляет сниппет.
-  "latex-workshop.intellisense.label.command": ["label", "linelabel", "suaiimg"],
+  // Команды \suai... с аргументами и описанием LaTeX Workshop берёт
+  // из .vscode/suai-report.json (копия src/vscode/suai-report.json).
+  "latex-workshop.intellisense.package.dirs": ["%WORKSPACE_FOLDER%/.vscode"],
+  // Внутри \figref{...} и остальных *ref подсказываются метки из последней
+  // сборки: fig:scheme, tab:sync, eq:size, lst:backup. Сборка идёт при
+  // каждом автосохранении, так что новая метка появляется через секунду-две.
 
   "files.exclude": { "**/build": true },
-  // Сниппеты ГУАП: \suaita + Tab. Enter всегда даёт новую строку, подсказку
-  // принимает только Tab. Слова из текста не подсказываются, иначе они
-  // забивают список и перехватывают Tab при заполнении ячеек таблицы.
+  // Подсказку принимает только Tab, Enter всегда даёт новую строку.
+  // Сниппеты — в конце списка: иначе при наборе \it или \begin{eq Tab
+  // вставлял бы не \item, а шаблон, чьё имя похоже по буквам. Слова из
+  // текста не подсказываются: они забивают список и перехватывают Tab
+  // при заполнении ячеек таблицы.
   "[latex]": {
     "editor.wordWrap": "on",
     "editor.quickSuggestions": { "other": true, "comments": false, "strings": false },
-    "editor.snippetSuggestions": "top",
+    "editor.snippetSuggestions": "bottom",
     "editor.tabCompletion": "onlySnippets",
     "editor.acceptSuggestionOnEnter": "off",
     "editor.wordBasedSuggestions": "off",

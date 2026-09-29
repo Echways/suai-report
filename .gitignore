@@ -1,5 +1,5 @@
 build/
-main.pdf
+*.pdf
 /ci/
 /dist/
 __pycache__/

@@ -125,6 +125,13 @@ def latexmk_args() -> list[str]:
     return [a for a in tool["args"] if a != "%DOC_EXT%"]
 
 
+def pdf_path(d: Path) -> Path:
+    """Готовый PDF, как его называет сборка из settings.json:
+    Databases/lab-3 -> Databases/lab-3/Databases-lab-3.pdf."""
+    d = d.resolve()
+    return d / f"{d.parent.name}-{d.name}.pdf"
+
+
 def texmf_sty() -> Path:
     try:
         home = subprocess.run(["kpsewhich", "-var-value", "TEXMFHOME"],
@@ -244,10 +251,10 @@ HELP = {
     "install":   "suai-report.sty в ~/texmf, команда suai в ~/.local/bin",
     "uninstall": "убрать установленное",
     "update":    "обновить .vscode в текущем отчёте",
-    "build":     "собрать main.pdf",
+    "build":     "собрать PDF (Предмет/lab-3 -> Предмет-lab-3.pdf)",
     "watch":     "пересобирать при каждом сохранении",
     "open":      "собрать и открыть PDF",
-    "clean":     "удалить build/ и main.pdf",
+    "clean":     "удалить build/ и PDF",
 }
 
 
@@ -257,13 +264,14 @@ def cmd_watch(d: Path) -> None:
 
 def cmd_open(d: Path) -> None:
     run_latexmk(d)
-    subprocess.Popen(["xdg-open", str(d / "main.pdf")],
+    subprocess.Popen(["xdg-open", str(pdf_path(d))],
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def cmd_clean(d: Path) -> None:
     shutil.rmtree(d / "build", ignore_errors=True)
-    (d / "main.pdf").unlink(missing_ok=True)
+    pdf_path(d).unlink(missing_ok=True)
+    (d / "main.pdf").unlink(missing_ok=True)       # прежнее имя PDF
 
 
 def main() -> None:
