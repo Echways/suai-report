@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+## 2.3 — 2026-09-29
+
 - Tables no longer run over the rules with long entries such as formulas,
   cell ranges or identifiers (`='Журнал'!I6>СРЗНАЧ(БД_Фильтр)`). Each column
   is measured at four widths — whole cell, whole words, pieces between
