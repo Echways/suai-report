@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+## 2.4 — 2026-09-29
+
 - Lists are set like ordinary paragraphs, as GUAP's standards check
   requires: the label starts at the paragraph indent, and the following
   lines of an item go back to the left margin instead of lining up under
