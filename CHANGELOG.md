@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+## 2.5 — 2026-09-29
+
 - Code in the text is written with `\suaicode` too: `\suaicode[bash, backup]{Caption}`
   followed by indented lines. Blank lines inside the code are kept, the
   code ends at the first line without indentation, the common indentation
