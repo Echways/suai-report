@@ -243,6 +243,22 @@
 }
 \lstset{style=gost}
 
+% listings разбирает только символы 0–255, остальные XeTeX ставит сразу,
+% мимо его буфера: русское слово в начале строки уезжало в конец
+% предыдущей. Кириллица — буквы листинга, тире, кавычки и № — прочие.
+\def\suai@lstchars#1#2#3{%
+  \count@=#2
+  \loop\ifnum\count@<#3
+    \catcode\count@=\active
+    \begingroup\lccode`\~=\count@ \lccode`\A=\count@
+    \lowercase{\endgroup\def~{#1A}}%
+    \advance\count@\@ne
+  \repeat}
+\lst@AddToHook{SelectCharTable}{%
+  \suai@lstchars\lst@ProcessLetter{"0400}{"0460}%
+  \suai@lstchars\lst@ProcessOther{"2010}{"2028}%
+  \suai@lstchars\lst@ProcessOther{"2116}{"2117}}
+
 %%---------------------------------------------------------------------
 %%  7. ПРИЛОЖЕНИЯ (ГОСТ 7.32-2017, п. 6.14)
 %%---------------------------------------------------------------------
@@ -426,7 +442,7 @@
   \setcounter{page}{2}}% титул считается, но не нумеруется
 
 %%---------------------------------------------------------------------
-%%  9. ССЫЛКИ, РИСУНКИ И КОД ИЗ ФАЙЛА
+%%  9. ССЫЛКИ И РИСУНКИ
 %%---------------------------------------------------------------------
 \RequirePackage[hidelinks,bookmarksnumbered]{hyperref}
 \RequirePackage{bookmark,xurl}
@@ -471,14 +487,6 @@
     \IfNoValueTF{#4}{\suai@autolabel{fig}{#2}}{\label{#4}}%
   \end{figure}}
 
-\NewDocumentCommand{\suaicode}{O{} m m o}{%
-  \IfFileExists{#2}{\def\suai@codefile{#2}}{\def\suai@codefile{code/#2}}%
-  \IfNoValueTF{#4}%
-    {\suai@basename{#2}\edef\suai@codelabel{lst:\suai@base}}%
-    {\def\suai@codelabel{#4}}%
-  \lstinputlisting[language={#1},caption={#3},label=\suai@codelabel]%
-    {\suai@codefile}}
-
 \ExplSyntaxOn
 %%---------------------------------------------------------------------
 %% 10. БЛОЧНЫЕ КОМАНДЫ: ЧТЕНИЕ СТРОК
@@ -512,6 +520,7 @@
   \tex_lowercase:D
     {
       \group_end:
+      \tl_const:Nn \c__suai_eol_tl { ~ }
       \cs_new_protected:Npn \__suai_lines_start:
         {
           \cs_set_eq:NN ~ \__suai_eol:
@@ -534,7 +543,17 @@
         \bool_set_false:N \l__suai_cmd_bool
         \tl_if_head_is_N_type:nT {#1} { \__suai_check_cmd:w #1 \q_stop }
         \bool_if:NTF \l__suai_cmd_bool
-          { \__suai_lines_stop:n {#1} }
+          {
+            % \suaicode читает код со следующей строки, и ему нужен
+            % съеденный здесь конец строки
+            \str_if_eq:VnTF \l__suai_cmd_str { suaicode }
+              {
+                \tl_set:Nn \l_tmpa_tl {#1}
+                \tl_put_right:NV \l_tmpa_tl \c__suai_eol_tl
+                \exp_args:NV \__suai_lines_stop:n \l_tmpa_tl
+              }
+              { \__suai_lines_stop:n {#1} }
+          }
           {
             \seq_gput_right:Nn \g__suai_lines_seq {#1}
             \__suai_line:w
@@ -1036,7 +1055,12 @@
   { \suai_read_lines:n { \__suai_sources: } }
 
 %%---------------------------------------------------------------------
-%% 15. ЛИСТИНГ В ТЕКСТЕ
+%% 15. ЛИСТИНГИ
+%%  \suaicode[язык, метка]{файл}{Подпись}[метка] — код из файла (ищется
+%%  и в code/), метка по умолчанию lst:имя-файла.
+%%  \suaicode[язык, метка]{Подпись} — код в тексте: строки с отступом
+%%  под командой, пустые строки внутри можно. Код кончается на первой
+%%  непустой строке без отступа; общий отступ срезается.
 %%  [язык, метка]: без «=» — по позиции, с «=» — ключ listings.
 %%---------------------------------------------------------------------
 \int_new:N \l__suai_code_int
@@ -1058,8 +1082,195 @@
       }
     \lstset { caption = {#2} }
   }
+
+\msg_new:nnn { suai } { code-empty }
+  {
+    Под~\iow_char:N\\suaicode~нет~строк~с~отступом.~Код~в~тексте~
+    пишется~под~командой~с~отступом,~код~из~файла~—~так:~
+    \iow_char:N\\suaicode[язык]{файл}{Подпись}.
+  }
+\msg_new:nnn { suai } { code-rest }
+  {
+    После~подписи~\iow_char:N\\suaicode~на~той~же~строке~ничего~
+    не~пишется:~код~начинается~со~следующей~строки.
+  }
+
+% Форма узнаётся по второй {…} на той же строке. Конец строки делается
+% активным до того, как TeX её прочтёт, и peek на нём останавливается.
+\NewDocumentCommand \suaicode { O{} m }
+  {
+    \group_begin:
+      \char_set_catcode_active:n { 13 }
+      \char_set_catcode_other:N \%
+      \peek_catcode_ignore_spaces:NTF \c_group_begin_token
+        { \group_end: \__suai_code_file:nnnn {#1} {#2} }
+        {
+          \tl_gset:Nn \g__suai_code_then_tl { \__suai_code_typeset:nn {#1} {#2} }
+          \__suai_code_inline:
+        }
+  }
+
+\NewDocumentCommand \__suai_code_file:nnnn { m m m o }
+  {
+    \group_begin:
+      \use:c { suai@basename } {#2}
+      \exp_args:Nx \lstset { label = { lst: \use:c { suai@base } } }
+      \use:c { suai@codeopts } {#1} {#3}
+      \IfValueT {#4} { \lstset { label = {#4} } }
+      \file_if_exist:nTF {#2}
+        { \lstinputlisting {#2} }
+        { \lstinputlisting { code/#2 } }
+    \group_end:
+  }
+
+%% Код в тексте. Строки читаются как есть (все ASCII — «прочие»,
+%% конец строки активный) и собираются в \g__suai_code_seq, табуляция
+%% сразу разворачивается в пробелы до колонки, кратной 4 (tabsize).
+%% Строка, на которой код кончился, после листинга читается заново
+%% с обычными кодами.
+\tl_new:N \g__suai_code_then_tl
+\seq_new:N \g__suai_code_seq
+\int_new:N \g__suai_code_blank_int    % пустые строки после последней строки кода
+\int_new:N \g__suai_code_indent_int   % общий отступ
+\tl_new:N \g__suai_code_stop_tl
+\tl_new:N \l__suai_code_line_tl
+\int_new:N \l__suai_code_col_int
+\int_new:N \l__suai_code_lead_int
+\iow_new:N \g__suai_code_iow
+\tl_const:Nx \c__suai_code_space_tl { \char_generate:nn { 32 } { 12 } }
+
+\cs_new_protected:Npn \__suai_code_inline:
+  {
+    \seq_gclear:N \g__suai_code_seq
+    \int_gzero:N \g__suai_code_blank_int
+    \int_gset_eq:NN \g__suai_code_indent_int \c_max_int
+    \__suai_code_rest:w
+  }
+
+\group_begin:
+  \char_set_lccode:nn { `\~ } { 13 }
+  \char_set_catcode_active:N \~
+  \tex_lowercase:D
+    {
+      \group_end:
+      % остаток строки с командой: пусто или комментарий
+      \cs_new_protected:Npn \__suai_code_rest:w #1 ~
+        {
+          \tl_if_blank:nF {#1}
+            {
+              \str_if_eq:eeF { \str_head:n {#1} } { \c_percent_str }
+                { \msg_error:nn { suai } { code-rest } }
+            }
+          \int_step_inline:nnn { 0 } { 127 } { \char_set_catcode_other:n {##1} }
+          \char_set_catcode_active:n { 13 }
+          \__suai_code_line:w
+        }
+      \cs_new_protected:Npn \__suai_code_line:w #1 ~
+        { \__suai_code_line:n {#1} }
+    }
+
+\cs_new_protected:Npn \__suai_code_line:n #1
+  {
+    \tl_clear:N \l__suai_code_line_tl
+    \int_zero:N \l__suai_code_col_int
+    \int_set:Nn \l__suai_code_lead_int { -1 }   % -1 — пока одни пробелы
+    \tl_map_inline:nn {#1}
+      {
+        \int_compare:nNnTF { `##1 } = { 9 }
+          {
+            \prg_replicate:nn { 4 - \int_mod:nn { \l__suai_code_col_int } { 4 } }
+              {
+                \tl_put_right:NV \l__suai_code_line_tl \c__suai_code_space_tl
+                \int_incr:N \l__suai_code_col_int
+              }
+          }
+          {
+            \int_compare:nNnT \l__suai_code_lead_int < 0
+              {
+                \int_compare:nNnF { `##1 } = { 32 }
+                  { \int_set_eq:NN \l__suai_code_lead_int \l__suai_code_col_int }
+              }
+            \tl_put_right:Nn \l__suai_code_line_tl {##1}
+            \int_incr:N \l__suai_code_col_int
+          }
+      }
+    \int_compare:nNnTF \l__suai_code_lead_int < 0
+      {
+        \int_gincr:N \g__suai_code_blank_int
+        \__suai_code_line:w
+      }
+      {
+        \int_compare:nNnTF \l__suai_code_lead_int > 0
+          {
+            \seq_if_empty:NF \g__suai_code_seq
+              {
+                \prg_replicate:nn { \g__suai_code_blank_int }
+                  { \seq_gput_right:Nn \g__suai_code_seq { } }
+              }
+            \int_gzero:N \g__suai_code_blank_int
+            \seq_gput_right:NV \g__suai_code_seq \l__suai_code_line_tl
+            \int_gset:Nn \g__suai_code_indent_int
+              { \int_min:nn { \g__suai_code_indent_int } { \l__suai_code_lead_int } }
+            \__suai_code_line:w
+          }
+          {
+            \tl_gset:Nn \g__suai_code_stop_tl {#1}
+            \group_end:
+            \__suai_code_end:
+          }
+      }
+  }
+
+\cs_new_protected:Npn \__suai_code_end:
+  {
+    \seq_if_empty:NTF \g__suai_code_seq
+      { \msg_error:nn { suai } { code-empty } }
+      { \tl_use:N \g__suai_code_then_tl }
+    \int_compare:nNnT \g__suai_code_blank_int > 0 { \par }
+    \__suai_code_stop:
+  }
+
+% Строка перечитывается без конца строки: \tl_set_rescan в expl3 2022
+% года падает на строке из одного комментария, поэтому такая строка
+% просто пропускается, а пробел за строкой ставится вручную. Следующему
+% \suaicode вместо пробела нужен активный конец строки, как после
+% \suaitable.
+\cs_new_protected:Npn \__suai_code_stop:
+  {
+    \str_if_eq:eeTF { \str_head:N \g__suai_code_stop_tl } { \c_percent_str }
+      { \tl_clear:N \l_tmpa_tl }
+      {
+        \exp_args:NNnV \tl_set_rescan:Nnn \l_tmpa_tl
+          { \int_set:Nn \tex_endlinechar:D { -1 } } \g__suai_code_stop_tl
+        \str_if_eq:eeTF
+          { \str_range:Nnn \g__suai_code_stop_tl { 1 } { 9 } }
+          { \c_backslash_str suaicode }
+          { \tl_put_right:NV \l_tmpa_tl \c__suai_eol_tl }
+          {
+            \exp_args:NNV \str_if_in:NnF \g__suai_code_stop_tl \c_percent_str
+              { \tl_put_right:NV \l_tmpa_tl \c_space_tl }
+          }
+      }
+    \tl_use:N \l_tmpa_tl
+  }
+
+\cs_new_protected:Npn \__suai_code_typeset:nn #1#2
+  {
+    \iow_open:Nn \g__suai_code_iow { \c_sys_jobname_str .code }
+    \seq_map_inline:Nn \g__suai_code_seq
+      {
+        \iow_now:Nx \g__suai_code_iow
+          { \tl_range:nnn {##1} { \g__suai_code_indent_int + 1 } { -1 } }
+      }
+    \iow_close:N \g__suai_code_iow
+    \group_begin:
+      \use:c { suai@codeopts } {#1} {#2}
+      \lstinputlisting { \c_sys_jobname_str .code }
+    \group_end:
+  }
 \ExplSyntaxOff
 
+% старое окружение, чтобы собирались прежние отчёты
 \lstnewenvironment{code}[2][]{\suai@codeopts{#1}{#2}}{}
 
 \endinput

@@ -48,9 +48,9 @@
     "body": [
       "Код приведён в~\\lstref{${1:name}}.",
       "",
-      "\\begin{code}[${2|Python,C,C++,Java,SQL,bash,HTML|}, ${1:name}]{${3:Подпись}}",
-      "$0",
-      "\\end{code}"
+      "\\suaicode[${2|Python,C,C++,Java,SQL,bash,HTML|}, ${1:name}]{${3:Подпись}}",
+      "    $0",
+      ""
     ]
   },
   "ГУАП: код из файла со ссылкой": {

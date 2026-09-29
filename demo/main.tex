@@ -4,6 +4,7 @@
 %%
 %%  ПРАВИЛО ОДНО: блочная команда (\suaitasks, \suailist, \suaitable,
 %%  \suaieq, \suaisources) читает строки под собой до ПУСТОЙ строки.
+%%  Код под \suaicode пишется С ОТСТУПОМ и идёт до строки без отступа.
 %%=====================================================================
 \documentclass[a4paper,14pt]{extarticle}
 \usepackage{suai-report}
@@ -82,10 +83,12 @@ N | число заметок
 
 Скрипт для резервной копии хранилища приведён в~\lstref{backup}.
 
-\begin{code}[bash, backup]{Резервное копирование хранилища}
-#!/bin/bash
-tar -czf "vault-$(date +%F).tar.gz" ~/Obsidian/Vault
-\end{code}
+\suaicode[bash, backup]{Резервное копирование хранилища}
+    #!/bin/bash
+    # архив с датой в имени
+    tar -czf "vault-$(date +%F).tar.gz" ~/Obsidian/Vault
+
+    echo "Готово"
 
 %%---------------------------------------------------------------------
 \suaiconclusion

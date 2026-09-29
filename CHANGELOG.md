@@ -6,6 +6,17 @@
 
 ## Unreleased
 
+- Code in the text is written with `\suaicode` too: `\suaicode[bash, backup]{Caption}`
+  followed by indented lines. Blank lines inside the code are kept, the
+  code ends at the first line without indentation, the common indentation
+  is removed and tabs count as 4 columns. `%`, `#`, `\` and braces need no
+  escaping. The first argument of the file form also takes
+  `[language, label]` and listings keys. `\begin{code}` still works but is
+  no longer documented; the VS Code `lst` snippet inserts `\suaicode`.
+- Listings under XeLaTeX: a Cyrillic word at the start of a code line
+  jumped to the end of the previous line. Cyrillic letters, dashes, quotes
+  and `№` now go through listings like ASCII.
+
 ## 2.4 — 2026-09-29
 
 - Lists are set like ordinary paragraphs, as GUAP's standards check

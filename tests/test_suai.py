@@ -102,7 +102,7 @@ class SourcesTest(unittest.TestCase):
         data = json.loads((suai.VSCODE / "suai-report.json").read_text(encoding="utf-8"))
         described = {m["name"] for m in data["macros"]}
         self.assertEqual(described, public)
-        self.assertEqual([e["name"] for e in data["envs"]], ["code"])
+        self.assertEqual(data["envs"], [])     # code — только для старых отчётов
 
     def test_template_dir_detection(self):
         self.assertTrue(suai.is_template_dir(suai.REPO))
