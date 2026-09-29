@@ -6,6 +6,12 @@
 
 ## Unreleased
 
+- Lists are set like ordinary paragraphs, as GUAP's standards check
+  requires: the label starts at the paragraph indent, and the following
+  lines of an item go back to the left margin instead of lining up under
+  the text after the label. Nested lists start at 2 cm, whatever the list
+  type (`itemize` inside `enumerate` used to sit at the first level).
+
 ## 2.3 — 2026-09-29
 
 - Tables no longer run over the rules with long entries such as formulas,
