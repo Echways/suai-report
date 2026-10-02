@@ -6,6 +6,8 @@
 
 ## Unreleased
 
+## 2.6 — 2026-10-02
+
 - Windows: the build no longer calls `cp` from a shell. The finished PDF
   is copied next to `main.tex` by latexmk itself, so the VS Code recipe and
   `suai build` work the same on Linux, macOS and Windows. Existing reports
