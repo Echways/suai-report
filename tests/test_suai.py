@@ -29,6 +29,11 @@ def quiet(fn, *args):
         return fn(*args)
 
 
+# Perl в Windows видит путь в ANSI-кодировке системы: кириллица в нём
+# читается только при русской локали, которой на CI нет
+COURSE = "Data bases" if suai.WINDOWS else "Базы данных"
+
+
 class SetKeyTest(unittest.TestCase):
     def test_replaces_value(self):
         out = suai.set_key(SETUP, "title", "Новое")
@@ -84,13 +89,32 @@ class SourcesTest(unittest.TestCase):
     def test_pdf_name_matches_latexmk(self):
         """PDF, который копирует сборка, и тот, что ищут open/clean, — один файл."""
         with tempfile.TemporaryDirectory() as tmp:
-            d = Path(tmp) / "Базы данных" / "lab-3"
+            d = Path(tmp) / COURSE / "lab-3"
             d.mkdir(parents=True)
             code = suai.latexmk_args()[1] + "; print $suai_pdf"
             out = subprocess.run(["perl", "-e", code], cwd=d, check=True,
                                  capture_output=True).stdout.decode()
-            self.assertEqual(out, "Базы данных-lab-3.pdf")
+            self.assertEqual(out, f"{COURSE}-lab-3.pdf")
             self.assertEqual(suai.pdf_path(d), d.resolve() / out)
+
+    def test_latexmk_code_is_portable(self):
+        """Строка -e уходит в Perl как есть в любой ОС: без кавычек (их
+        по-разному разбирают cmd и sh) и без команд шелла вроде cp."""
+        code = suai.latexmk_args()[1]
+        for bad in ('"', "'", "&&", " cp "):
+            self.assertNotIn(bad, code)
+        self.assertIn("$success_cmd = q(internal suai_copy)", code)
+
+    @unittest.skipIf(shutil.which("perl") is None, "нет perl")
+    def test_latexmk_copies_pdf(self):
+        """suai_copy кладёт build/main.pdf рядом с main.tex под именем из двух папок."""
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp) / COURSE / "lab-3"
+            (d / "build").mkdir(parents=True)
+            (d / "build" / "main.pdf").write_bytes(b"%PDF")
+            code = "$root_filename = q(main); " + suai.latexmk_args()[1] + "; suai_copy()"
+            subprocess.run(["perl", "-e", code], cwd=d, check=True)
+            self.assertEqual(suai.pdf_path(d).read_bytes(), b"%PDF")
 
     def test_intellisense_matches_package(self):
         """suai-report.json описывает ровно пользовательские команды пакета."""
@@ -109,6 +133,115 @@ class SourcesTest(unittest.TestCase):
         self.assertTrue(suai.is_template_dir(suai.DEMO.parent))
         self.assertTrue(suai.is_template_dir(suai.SRC))
         self.assertFalse(suai.is_template_dir(Path(tempfile.gettempdir())))
+
+
+class FakeWinreg:
+    """HKCU\\Environment с одним значением Path."""
+    HKEY_CURRENT_USER, KEY_READ, KEY_WRITE = 1, 1, 2
+    REG_SZ, REG_EXPAND_SZ = 1, 2
+
+    def __init__(self, value=None, kind=2):
+        self.value, self.kind = value, kind
+
+    def OpenKey(self, *args):
+        return contextlib.nullcontext(self)
+
+    def QueryValueEx(self, key, name):
+        if self.value is None:
+            raise FileNotFoundError(name)
+        return self.value, self.kind
+
+    def SetValueEx(self, key, name, reserved, kind, value):
+        self.value, self.kind = value, kind
+
+
+class InstallTest(unittest.TestCase):
+    """Установка: всё, что различается между Windows и остальными."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        self.sty = self.root / "texmf" / "suai-report.sty"
+        self.patch("texmf_sty", mock.Mock(return_value=self.sty))
+
+    def patch(self, name, value):
+        patcher = mock.patch.object(suai, name, value)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def user_path(self, registry, d):
+        with mock.patch.dict(sys.modules, {"winreg": registry, "ctypes": mock.Mock()}):
+            return suai.add_to_user_path(Path(d))
+
+    def test_symlink(self):
+        linked = quiet(suai.link_sty, self.sty, suai.STY)     # в Windows может выйти копия
+        self.assertEqual(self.sty.is_symlink(), linked)
+        self.assertEqual(self.sty.read_bytes(), suai.STY.read_bytes())
+        self.assertEqual(suai.refresh_sty(), "ok")
+
+    def test_copy_when_symlinks_are_not_allowed(self):
+        with mock.patch.object(Path, "symlink_to", side_effect=OSError(1314, "нет прав")):
+            self.assertFalse(quiet(suai.link_sty, self.sty, suai.STY))
+        self.assertFalse(self.sty.is_symlink())
+        self.assertEqual(self.sty.read_bytes(), suai.STY.read_bytes())
+
+    def test_install_replaces_old_file(self):
+        self.sty.parent.mkdir(parents=True)
+        self.sty.write_text("старое", encoding="utf-8")
+        quiet(suai.link_sty, self.sty, suai.STY)
+        self.assertEqual(self.sty.read_bytes(), suai.STY.read_bytes())
+
+    def test_stale_copy_is_refreshed(self):
+        self.assertEqual(suai.refresh_sty(), "missing")
+        self.sty.parent.mkdir(parents=True)
+        self.sty.write_text("старое", encoding="utf-8")
+        self.assertEqual(suai.refresh_sty(), "updated")
+        self.assertEqual(self.sty.read_bytes(), suai.STY.read_bytes())
+        self.assertEqual(suai.refresh_sty(), "ok")
+
+    def test_unix_launcher(self):
+        self.patch("WINDOWS", False)
+        text = suai.launcher().decode()
+        self.assertTrue(text.startswith("#!/bin/sh\nexec python3 "))
+        self.assertIn(str(Path(suai.__file__).resolve()), text)
+
+    def test_windows_launcher(self):
+        self.patch("WINDOWS", True)
+        text = suai.launcher().decode("utf-8")
+        line = text.splitlines()[-1]
+        self.assertEqual(line, f'@"{sys.executable}" "{Path(suai.__file__).resolve()}" %*')
+        self.assertTrue(text.endswith("\r\n"))
+        self.assertNotIn("python3 ", line)
+
+    def test_in_path(self):
+        d = self.root / "bin"
+        self.assertTrue(suai.in_path(d, f'/x;"{d}"', ";"))
+        self.assertTrue(suai.in_path(d, f"{d}{os.sep}", ";"))
+        self.assertFalse(suai.in_path(d, f"/x;{d}-other;", ";"))
+
+    def test_user_path_is_appended_once(self):
+        d = self.root / "bin"
+        registry = FakeWinreg("C:\\Tools;%USERPROFILE%\\go\\bin;", FakeWinreg.REG_SZ)
+        self.assertTrue(self.user_path(registry, d))
+        self.assertEqual(registry.value, f"C:\\Tools;%USERPROFILE%\\go\\bin;{d}")
+        self.assertEqual(registry.kind, FakeWinreg.REG_SZ)
+        self.assertFalse(self.user_path(registry, d))
+        self.assertEqual(registry.value, f"C:\\Tools;%USERPROFILE%\\go\\bin;{d}")
+
+    def test_user_path_created_when_absent(self):
+        registry = FakeWinreg()
+        self.assertTrue(self.user_path(registry, self.root / "bin"))
+        self.assertEqual(registry.value, str(self.root / "bin"))
+        self.assertEqual(registry.kind, FakeWinreg.REG_EXPAND_SZ)
+
+    def test_miktex_needs_perl(self):
+        self.patch("shutil", mock.Mock(which=lambda name: None if name == "perl" else name))
+        self.assertEqual(suai.missing_tools(), ["perl"])
+
+    def test_files_are_written_with_lf(self):
+        suai.write_text(self.root / "a.tex", "один\nдва\n")
+        self.assertEqual((self.root / "a.tex").read_bytes(), "один\nдва\n".encode("utf-8"))
 
 
 class ReportTestCase(unittest.TestCase):

@@ -6,6 +6,22 @@
 
 ## Unreleased
 
+- Windows: the build no longer calls `cp` from a shell. The finished PDF
+  is copied next to `main.tex` by latexmk itself, so the VS Code recipe and
+  `suai build` work the same on Linux, macOS and Windows. Existing reports
+  get it with `suai update`.
+- Windows: `python scripts\suai.py install` works without `make`. Where
+  symlinks are not allowed `suai-report.sty` is copied (and refreshed by
+  `suai install`, `suai new` and `suai update`), the `suai` command is a
+  `suai.cmd` that runs the Python it was installed with, and its folder is
+  added to the user's `PATH`. MiKTeX gets its root registered and its file
+  name database refreshed. `suai open` uses the system viewer on Windows
+  and macOS, and VS Code is found when it is `code.cmd`.
+- `suai install` lists the missing tools (`xelatex`, `latexmk`, `biber`,
+  and Perl with MiKTeX). Files written by `suai` always have LF line ends.
+- The package no longer uses `\peek_catcode_ignore_spaces:NTF`, deprecated
+  in expl3 since 2022, nor `\use:x`. The typeset report is unchanged.
+
 ## 2.5 — 2026-09-29
 
 - Code in the text is written with `\suaicode` too: `\suaicode[bash, backup]{Caption}`

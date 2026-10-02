@@ -8,8 +8,10 @@
 
 ## Установка
 
-Нужны TeX Live (`xelatex`, `latexmk`, `biber`), Python 3 и VS Code
-с расширением LaTeX Workshop.
+Нужны TeX Live (`xelatex`, `latexmk`, `biber`), Python 3.10 или новее
+и VS Code с расширением LaTeX Workshop.
+
+Linux и macOS:
 
 ```bash
 git clone https://github.com/Echways/suai-report
@@ -17,8 +19,28 @@ cd suai-report
 make install
 ```
 
+Windows (PowerShell или cmd; `make` не нужен):
+
+```bat
+git clone https://github.com/Echways/suai-report
+cd suai-report
+py scripts\suai.py install
+```
+
+Если команды `py` нет, вместо неё пишется `python`. После установки открой
+новый терминал — в нём уже есть команда `suai`.
+
 `suai-report.sty` ставится в `~/texmf` симлинком, команда `suai` —
 в `~/.local/bin`. После `git pull` обновления сразу действуют во всех отчётах.
+
+В Windows то же самое лежит в `%USERPROFILE%\texmf` и
+`%USERPROFILE%\.local\bin` (папка сама добавляется в PATH пользователя).
+Симлинк там получается только в режиме разработчика, иначе
+`suai-report.sty` копируется — тогда после `git pull` повтори `suai install`.
+Вместо TeX Live подойдёт MiKTeX, но к нему нужен
+[Strawberry Perl](https://strawberryperl.com): без него не работает `latexmk`.
+Листинги набираются шрифтом Liberation Mono; если он не установлен,
+берётся TeX Gyre Cursor.
 
 ## Новый отчёт
 

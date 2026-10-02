@@ -324,7 +324,7 @@
   {
     \bool_if:NT \l__suai_key_bool
       {
-        \use:x
+        \use:e
           {
             \exp_not:N \keys_set:nn { suai }
               { \exp_not:V \l__suai_key_tl = { \exp_not:V \l__suai_value_tl } }
@@ -353,14 +353,14 @@
   }
 
 % date = today -> ДД.ММ.ГГГГ на момент сборки
-\cs_new:Npn \__suai_two_digits:n #1
+\cs_new:Npn \__suai_two_digits:N #1
   { \int_compare:nNnT {#1} < { 10 } { 0 } \int_use:N #1 }
 \cs_new:cpn { suai@thedate }
   {
     \tl_if_eq:cnTF { suai@date } { today }
       {
-        \__suai_two_digits:n \c_sys_day_int .
-        \__suai_two_digits:n \c_sys_month_int .
+        \__suai_two_digits:N \c_sys_day_int .
+        \__suai_two_digits:N \c_sys_month_int .
         \int_use:N \c_sys_year_int
       }
       { \use:c { suai@date } }
@@ -471,7 +471,7 @@
 \cs_new_protected:cpn { suai@autolabel } #1#2
   {
     \use:c { suai@basename } {#2}
-    \use:x { \exp_not:N \label { #1 : \use:c { suai@base } } }
+    \use:e { \exp_not:N \label { #1 : \use:c { suai@base } } }
   }
 \ExplSyntaxOff
 
@@ -1102,11 +1102,14 @@
     \group_begin:
       \char_set_catcode_active:n { 13 }
       \char_set_catcode_other:N \%
-      \peek_catcode_ignore_spaces:NTF \c_group_begin_token
-        { \group_end: \__suai_code_file:nnnn {#1} {#2} }
+      \peek_remove_spaces:n
         {
-          \tl_gset:Nn \g__suai_code_then_tl { \__suai_code_typeset:nn {#1} {#2} }
-          \__suai_code_inline:
+          \peek_catcode:NTF \c_group_begin_token
+            { \group_end: \__suai_code_file:nnnn {#1} {#2} }
+            {
+              \tl_gset:Nn \g__suai_code_then_tl { \__suai_code_typeset:nn {#1} {#2} }
+              \__suai_code_inline:
+            }
         }
   }
 

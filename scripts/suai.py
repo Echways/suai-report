@@ -7,6 +7,7 @@
   suai build|watch|open|clean [DIR]
 
 Всё, что попадает в отчёты, лежит в src/: suai-report.sty, template.tex, vscode/.
+Работает в Linux, macOS и Windows (там ~ — это %USERPROFILE%).
 """
 
 import argparse
@@ -19,6 +20,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+if sys.version_info < (3, 10):
+    sys.exit("suai: нужен Python 3.10 или новее")
+
+WINDOWS = os.name == "nt"
+
 REPO = Path(__file__).resolve().parent.parent
 SRC = REPO / "src"
 STY = SRC / "suai-report.sty"
@@ -27,7 +33,7 @@ VSCODE = SRC / "vscode"  # копируется в .vscode/ отчёта
 DEMO = REPO / "demo" / "main.tex"
 
 REPORT_GITIGNORE = "build/\n"
-BIN = Path.home() / ".local" / "bin" / "suai"
+BIN = Path.home() / ".local" / "bin" / ("suai.cmd" if WINDOWS else "suai")
 
 SETUP_RE = re.compile(r"^\\suaisetup\{.*?^\}", re.M | re.S)
 TRAILING_NUM_RE = re.compile(r"(\d+)$")
@@ -36,6 +42,11 @@ TRAILING_NUM_RE = re.compile(r"(\d+)$")
 def die(msg: str) -> None:
     print(f"ошибка: {msg}", file=sys.stderr)
     sys.exit(1)
+
+
+def write_text(path: Path, text: str) -> None:
+    """UTF-8 и LF на любой системе: Path.write_text в Windows дал бы CRLF."""
+    path.write_bytes(text.encode("utf-8"))
 
 
 def read_setup(tex: Path) -> str | None:
@@ -132,29 +143,149 @@ def pdf_path(d: Path) -> Path:
     return d / f"{d.parent.name}-{d.name}.pdf"
 
 
+def is_miktex() -> bool:
+    return shutil.which("initexmf") is not None
+
+
+def texmf_home() -> Path:
+    """Личное дерево TeX. У MiKTeX его нет, пока не зарегистрируешь:
+    это делает miktex_refresh."""
+    home = ""
+    kpsewhich = shutil.which("kpsewhich")
+    if kpsewhich and not is_miktex():
+        try:
+            home = subprocess.run([kpsewhich, "-var-value", "TEXMFHOME"],
+                                  capture_output=True, text=True).stdout.strip()
+        except OSError:
+            pass
+    return Path(home) if home else Path.home() / "texmf"
+
+
 def texmf_sty() -> Path:
-    try:
-        home = subprocess.run(["kpsewhich", "-var-value", "TEXMFHOME"],
-                              capture_output=True, text=True).stdout.strip()
-    except OSError:
-        home = ""                       # TeX Live не установлен
-    return Path(home or Path.home() / "texmf") / "tex" / "latex" / "suai-report" / "suai-report.sty"
+    return texmf_home() / "tex" / "latex" / "suai-report" / "suai-report.sty"
 
 
-def symlink(link: Path, target: Path) -> None:
+def miktex_refresh(register: bool) -> None:
+    """MiKTeX ищет файлы по базе имён: дерево надо зарегистрировать,
+    а базу обновлять после появления и удаления файла."""
+    initexmf = shutil.which("initexmf")
+    if initexmf is None:
+        return
+    steps = [["--update-fndb"]]
+    if register:
+        steps.insert(0, [f"--register-root={texmf_home()}"])
+    for args in steps:
+        try:
+            done = subprocess.run([initexmf, *args], capture_output=True, text=True)
+        except OSError as e:
+            print(f"  initexmf {args[0]}: {e}")
+            continue
+        if done.returncode:
+            print(f"  initexmf {args[0]}: {done.stderr.strip() or done.returncode}")
+
+
+def link_sty(link: Path, target: Path) -> bool:
+    """Симлинк, а где нельзя (Windows без режима разработчика) — копия.
+    True, если получился симлинк."""
     link.parent.mkdir(parents=True, exist_ok=True)
     if link.is_symlink() or link.exists():
         link.unlink()
-    link.symlink_to(target)
+    try:
+        link.symlink_to(target)
+    except OSError:
+        shutil.copyfile(target, link)
+        print(f"  {link} (копия)")
+        return False
     print(f"  {link} -> {target}")
+    return True
+
+
+def refresh_sty() -> str:
+    """Состояние установленного suai-report.sty: missing, ok или updated.
+    Симлинк свежий всегда, копию после git pull надо переписать."""
+    installed = texmf_sty()
+    if not installed.exists():
+        return "missing"
+    if installed.is_symlink() or filecmp.cmp(STY, installed, shallow=False):
+        return "ok"
+    shutil.copyfile(STY, installed)
+    return "updated"
+
+
+def launcher() -> bytes:
+    script = Path(__file__).resolve()
+    if not WINDOWS:
+        return f'#!/bin/sh\nexec python3 "{script}" "$@"\n'.encode()
+    # python3 в Windows нет или это заглушка магазина приложений
+    text = f'@"{sys.executable}" "{script}" %*\r\n'
+    try:
+        return text.encode("oem")       # .cmd читается в кодировке консоли
+    except (UnicodeEncodeError, LookupError):
+        return ("@chcp 65001 >nul\r\n" + text).encode("utf-8")
+
+
+def in_path(d: Path, path: str, sep: str = os.pathsep) -> bool:
+    def norm(p: str) -> str:
+        return os.path.normcase(os.path.normpath(os.path.expandvars(p.strip('"'))))
+    return norm(str(d)) in (norm(p) for p in path.split(sep) if p)
+
+
+def add_to_user_path(d: Path) -> bool:
+    """Windows: дописать папку в PATH пользователя (HKCU\\Environment).
+    Тип значения сохраняется: в REG_EXPAND_SZ могут быть %ПЕРЕМЕННЫЕ%."""
+    import ctypes
+    import winreg
+    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment", 0,
+                        winreg.KEY_READ | winreg.KEY_WRITE) as key:
+        try:
+            value, kind = winreg.QueryValueEx(key, "Path")
+        except FileNotFoundError:
+            value, kind = "", winreg.REG_EXPAND_SZ
+        if in_path(d, value, ";"):
+            return False
+        value = f"{value.rstrip(';')};{d}" if value.strip(";") else str(d)
+        winreg.SetValueEx(key, "Path", 0, kind, value)
+    try:    # сообщить открытым программам, что окружение изменилось
+        ctypes.windll.user32.SendMessageTimeoutW(0xFFFF, 0x001A, 0, "Environment",
+                                                 0x0002, 5000, None)
+    except (AttributeError, OSError):
+        pass
+    return True
+
+
+def path_hint(d: Path) -> str:
+    if WINDOWS:
+        try:
+            if add_to_user_path(d):
+                return f"{d} добавлена в PATH — открой новый терминал"
+            return "открой новый терминал, чтобы заработала команда suai"
+        except OSError:
+            pass
+    return f"добавь {d} в PATH"
+
+
+def missing_tools() -> list[str]:
+    tools = ["xelatex", "latexmk", "biber"]
+    if is_miktex():
+        tools.append("perl")            # latexmk в MiKTeX без своего Perl
+    return [t for t in tools if shutil.which(t) is None]
 
 
 def open_editor(target: Path) -> None:
-    if shutil.which("code") is None:
+    code = shutil.which("code")         # в Windows это code.cmd: нужен полный путь
+    if code is None:
         print("  VS Code (code) не найден — открой папку сам")
         return
-    subprocess.Popen(["code", str(target), str(target / "main.tex")],
+    subprocess.Popen([code, str(target), str(target / "main.tex")],
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def open_file(path: Path) -> None:
+    if WINDOWS:
+        os.startfile(path)
+    else:
+        subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", str(path)],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def is_template_dir(path: Path) -> bool:
@@ -169,14 +300,20 @@ def report_dir(path: Path | None) -> Path:
 
 
 def cmd_install() -> None:
-    symlink(texmf_sty(), STY)
+    linked = link_sty(texmf_sty(), STY)
+    miktex_refresh(register=True)
     BIN.parent.mkdir(parents=True, exist_ok=True)
     BIN.unlink(missing_ok=True)
-    BIN.write_text(f'#!/bin/sh\nexec python3 "{Path(__file__).resolve()}" "$@"\n')
+    BIN.write_bytes(launcher())
     BIN.chmod(0o755)
     print(f"  {BIN}")
-    if shutil.which("suai") is None:
-        print(f"  добавь {BIN.parent} в PATH")
+    if not in_path(BIN.parent, os.environ.get("PATH", "")):
+        print(f"  {path_hint(BIN.parent)}")
+    if not linked:
+        print("  после git pull повтори install: suai-report.sty установлен копией")
+    missing = missing_tools()
+    if missing:
+        print(f"  не найдено: {', '.join(missing)} — без них отчёт не соберётся")
     print("Готово")
 
 
@@ -185,6 +322,7 @@ def cmd_uninstall() -> None:
         if path.is_symlink() or path.exists():
             path.unlink()
             print(f"  удалено {path}")
+    miktex_refresh(register=False)
 
 
 def cmd_new(target: Path, title: str | None, no_open: bool,
@@ -197,19 +335,26 @@ def cmd_new(target: Path, title: str | None, no_open: bool,
     main, source = render_main(target, title, prefer)
     (target / "images").mkdir(parents=True, exist_ok=True)
     install_kit(target)
-    (target / "main.tex").write_text(main, encoding="utf-8")
+    write_text(target / "main.tex", main)
     gitignore = target / ".gitignore"
     if not gitignore.exists():
-        gitignore.write_text(REPORT_GITIGNORE, encoding="utf-8")
+        write_text(gitignore, REPORT_GITIGNORE)
 
     print(f"Готово: {target}")
     print(f"  титул взят из {source}")
     if not title:
         print("  заполни title в main.tex")
-    if not texmf_sty().exists():
-        print("  suai-report.sty не установлен: выполни make install в репозитории шаблона")
+    report_sty_state()
     if not no_open:
         open_editor(target)
+
+
+def report_sty_state() -> None:
+    state = refresh_sty()
+    if state == "missing":
+        print(f"  suai-report.sty не установлен: выполни python {Path(__file__).resolve()} install")
+    elif state == "updated":
+        print("  suai-report.sty обновлён")
 
 
 def cmd_next(title: str | None, no_open: bool) -> None:
@@ -229,16 +374,20 @@ def cmd_update() -> None:
     report_dir(cwd)
     changed = install_kit(cwd)
     print(f"Обновлено: {', '.join(changed)}" if changed else "Всё актуально")
+    report_sty_state()
 
 
 def run_latexmk(d: Path, *extra: str) -> None:
     # «.» первой, иначе kpathsea может найти чужой main.tex
     env = dict(os.environ, TEXINPUTS=os.pathsep.join([".", str(SRC), ""]))
+    latexmk = shutil.which("latexmk")
+    if latexmk is None:
+        die("не найден latexmk — нужен TeX Live или MiKTeX")
     try:
-        subprocess.run(["latexmk", *latexmk_args(), *extra, "main.tex"],
+        subprocess.run([latexmk, *latexmk_args(), *extra, "main.tex"],
                        cwd=d, env=env, check=True)
-    except FileNotFoundError:
-        die("не найден latexmk — нужен TeX Live")
+    except OSError as e:
+        die(f"latexmk не запускается: {e}")
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
     except KeyboardInterrupt:
@@ -264,8 +413,7 @@ def cmd_watch(d: Path) -> None:
 
 def cmd_open(d: Path) -> None:
     run_latexmk(d)
-    subprocess.Popen(["xdg-open", str(pdf_path(d))],
-                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    open_file(pdf_path(d))
 
 
 def cmd_clean(d: Path) -> None:
@@ -289,6 +437,11 @@ def main() -> None:
     for name in ("build", "watch", "open", "clean"):
         sub.add_parser(name, help=HELP[name]).add_argument(
             "dir", type=Path, nargs="?", help="папка отчёта (по умолчанию текущая)")
+    # сообщения на русском не должны ронять команду, когда вывод
+    # перенаправлен в файл или трубу с кодировкой без кириллицы
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
     args = parser.parse_args()
 
     if args.cmd == "new":

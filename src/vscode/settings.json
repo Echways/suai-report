@@ -5,7 +5,9 @@
   // Сборка: XeLaTeX + Biber, служебное (и PDF с synctex) в build/, готовый
   // PDF копируется рядом с main.tex под именем из двух папок:
   // Databases/lab-3/main.tex -> Databases-lab-3.pdf. suai-report.sty ищется
-  // в ~/texmf (make install). Эти же аргументы использует команда suai build/watch.
+  // в ~/texmf (suai install). Эти же аргументы использует команда suai build/watch.
+  // В строке -e нет ни кавычек, ни команд шелла (PDF копирует сам Perl):
+  // так она одинаково работает в Linux, macOS и Windows.
   "latex-workshop.latex.recipes": [
     { "name": "ГУАП (latexmk)", "tools": ["suai-latexmk"] }
   ],
@@ -14,7 +16,7 @@
       "name": "suai-latexmk",
       "command": "latexmk",
       "args": [
-        "-e", "$pdf_mode = 5; $bibtex_use = 2; $out_dir = q(build); $xelatex = q(xelatex -synctex=1 -interaction=nonstopmode -file-line-error -halt-on-error %O %S); use Cwd; my @d = split m{/}, getcwd(); $suai_pdf = qq($d[-2]-$d[-1].pdf); $xdvipdfmx = qq(xdvipdfmx -E -o %D %O %S && cp %D '$suai_pdf')",
+        "-e", "$pdf_mode = 5; $bibtex_use = 2; $out_dir = q(build); $xelatex = q(xelatex -synctex=1 -interaction=nonstopmode -file-line-error -halt-on-error %O %S); use Cwd; use File::Copy; my @d = split m{[\\\\/]}, getcwd(); $suai_pdf = qq($d[-2]-$d[-1].pdf); sub suai_copy { copy(qq($out_dir/$root_filename.pdf), $suai_pdf) or warn qq(suai: $suai_pdf: $!\\n); return 0 } $success_cmd = q(internal suai_copy)",
         "%DOC_EXT%"
       ]
     }
