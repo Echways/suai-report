@@ -67,6 +67,18 @@ class SetKeyTest(unittest.TestCase):
         self.assertEqual(suai.tex_value("Скидка 50% и #1"), r"Скидка 50\% и \#1")
         self.assertEqual(suai.tex_value(r"уже \% экранирован"), r"уже \% экранирован")
 
+    def test_tex_value_escapes_chars_that_stop_the_build(self):
+        self.assertEqual(suai.tex_value("Обмен A_B & C^2"), r"Обмен A\_B \& C\^{}2")
+        self.assertEqual(suai.tex_value("Цена 5$"), r"Цена 5\$")
+        self.assertEqual(suai.tex_value(r"\LaTeX{} и R\&D"), r"\LaTeX{} и R\&D")
+
+    def test_tex_value_keeps_formula(self):
+        self.assertEqual(suai.tex_value("Корни $x_1$ и $x^2$, 5%"), r"Корни $x_1$ и $x^2$, 5\%")
+
+    def test_tex_value_braces_equals_sign(self):
+        self.assertEqual(suai.tex_value("Расчёт y = kx"), "{Расчёт y = kx}")
+        self.assertEqual(suai.tex_value("Прямая $y = kx_0$"), "{Прямая $y = kx_0$}")
+
     def test_split_comment_ignores_escaped_percent(self):
         self.assertEqual(suai.split_comment(r"a = 5\% x % c"), (r"a = 5\% x ", "% c"))
         self.assertEqual(suai.split_comment("a = 1"), ("a = 1", ""))

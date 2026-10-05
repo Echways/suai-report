@@ -10,6 +10,9 @@
   ctan.py release VERSION      поднять версию в suai-report.sty и CHANGELOG
 
 Метаданные пакета лежат в ctan/ctan.json. API: https://ctan.org/help/submit
+validate, upload и published запускаются только вручную: release.yml
+собирает архив и делает GitHub Release, а на CTAN архив загружается через
+форму (поля — ctan.py form).
 """
 
 import argparse

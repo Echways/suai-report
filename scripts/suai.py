@@ -58,9 +58,23 @@ def read_setup_dir(d: Path) -> str | None:
     return read_setup(d / "main.tex") if (d / "main.tex").is_file() else None
 
 
+def tex_escape(text: str, chars: str) -> str:
+    return re.sub(rf"(?<!\\)([{re.escape(chars)}])",
+                  lambda m: r"\^{}" if m.group(1) == "^" else "\\" + m.group(1), text)
+
+
 def tex_value(text: str) -> str:
-    """% и # в значении \\suaisetup закомментировали бы строку целиком."""
-    return re.sub(r"(?<!\\)([%#])", r"\\\1", text)
+    """Значение \\suaisetup из обычного текста. % закомментировал бы строку,
+    # & _ ^ и $ без пары останавливают сборку: они экранируются, если ещё
+    не экранированы. $…$ — формула, внутри неё только % и #. Значение со
+    знаком = берётся в скобки, иначе его начало станет именем ключа."""
+    parts = re.split(r"(?<!\\)\$", text)
+    if len(parts) % 2 == 0:             # $ без пары — знак доллара
+        text = tex_escape(text, "%#&_^$")
+    else:
+        text = "$".join(tex_escape(p, "%#" if i % 2 else "%#&_^")
+                        for i, p in enumerate(parts))
+    return f"{{{text}}}" if "=" in text else text
 
 
 def find_setup_source(target: Path, prefer: Path | None = None) -> Path:

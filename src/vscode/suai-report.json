@@ -14,8 +14,8 @@
     {"name": "suaiimg", "arg": {"format": "{}{}", "snippet": "suaiimg{${1:файл}}{${2:Подпись}}"}, "doc": "Рисунок из images/, метка fig:файл, ссылка \\figref{файл}."},
     {"name": "suaiimg", "arg": {"format": "[]{}{}", "snippet": "suaiimg[${1:0.5\\textwidth}]{${2:файл}}{${3:Подпись}}"}, "doc": "Рисунок заданной ширины (по умолчанию 0.8\\textwidth, не шире полосы)."},
     {"name": "suaieq", "arg": {"format": "[]{}", "snippet": "suaieq[${1:метка}]{${2:формула}}\n${3:обозначение} | ${4:пояснение}\n$0\n"}, "doc": "Формула; строки «обозначение | смысл» под ней дают «где …». Метка eq:метка, ссылка \\formref{метка}."},
-    {"name": "suaicode", "arg": {"format": "[]{}", "snippet": "suaicode[${1|Python,C,C++,Java,SQL,bash,HTML|}, ${2:метка}]{${3:Подпись}}\n    $0\n"}, "doc": "Листинг: код строками с отступом под командой, пустые строки внутри можно; кончается на строке без отступа. Метка lst:метка, ссылка \\lstref{метка}."},
-    {"name": "suaicode", "arg": {"format": "[]{}{}", "snippet": "suaicode[${1|Python,C,C++,Java,SQL,bash,HTML|}]{${2:файл}}{${3:Подпись}}"}, "doc": "Листинг из файла (ищется и в code/), метка lst:имя-файла, ссылка \\lstref{имя-файла}."},
+    {"name": "suaicode", "arg": {"format": "[]{}", "snippet": "suaicode[${1|Python,C,C++,C#,Java,JavaScript,TypeScript,Go,Kotlin,Rust,SQL,bash,HTML,JSON,YAML,Dockerfile|}, ${2:метка}]{${3:Подпись}}\n    $0\n"}, "doc": "Листинг: код строками с отступом под командой, пустые строки внутри можно; кончается на строке без отступа. Метка lst:метка, ссылка \\lstref{метка}."},
+    {"name": "suaicode", "arg": {"format": "[]{}{}", "snippet": "suaicode[${1|Python,C,C++,C#,Java,JavaScript,TypeScript,Go,Kotlin,Rust,SQL,bash,HTML,JSON,YAML,Dockerfile|}]{${2:файл}}{${3:Подпись}}"}, "doc": "Листинг из файла (ищется и в code/), метка lst:имя-файла, ссылка \\lstref{имя-файла}."},
     {"name": "suaisources", "arg": {"format": "", "snippet": "suaisources\n${1:Источник. URL: https://example.com (дата обращения: ${CURRENT_DATE}.${CURRENT_MONTH}.${CURRENT_YEAR}).}\n$0\n"}, "doc": "Список использованных источников: по источнику на строку до пустой строки. Без строк — \\printbibliography."},
     {"name": "suaiapp", "arg": {"format": "{}", "snippet": "suaiapp{${1:Название}}"}, "doc": "Приложение А, Б, … (обязательное)."},
     {"name": "suaiapp", "arg": {"format": "[]{}", "snippet": "suaiapp[${1|обязательное,рекомендуемое,справочное|}]{${2:Название}}"}, "doc": "Приложение со статусом."},
@@ -23,7 +23,8 @@
     {"name": "tabref", "arg": {"format": "{}", "snippet": "tabref{${1}}"}, "doc": "«таблице 1». Префикс tab: можно не писать."},
     {"name": "lstref", "arg": {"format": "{}", "snippet": "lstref{${1}}"}, "doc": "«листинге 1». Префикс lst: можно не писать."},
     {"name": "formref", "arg": {"format": "{}", "snippet": "formref{${1}}"}, "doc": "«формуле (1)». Префикс eq: можно не писать."},
-    {"name": "suaiheadfont", "doc": "Шрифт заголовков; без полужирного: \\renewcommand{\\suaiheadfont}{\\normalfont\\fontsize{14}{17}\\selectfont}", "unusual": true}
+    {"name": "suaiheadfont", "doc": "Шрифт заголовков; без полужирного: \\renewcommand{\\suaiheadfont}{\\normalfont\\fontsize{14}{17}\\selectfont}", "unusual": true},
+    {"name": "suaitablestretch", "doc": "Интервал в таблицах, по умолчанию как в тексте; одинарный: \\renewcommand{\\suaitablestretch}{1}", "unusual": true}
   ],
   "envs": [],
   "keys": {

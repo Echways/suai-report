@@ -48,7 +48,7 @@
     "body": [
       "Код приведён в~\\lstref{${1:name}}.",
       "",
-      "\\suaicode[${2|Python,C,C++,Java,SQL,bash,HTML|}, ${1:name}]{${3:Подпись}}",
+      "\\suaicode[${2|Python,C,C++,C#,Java,JavaScript,TypeScript,Go,Kotlin,Rust,SQL,bash,HTML,JSON,YAML,Dockerfile|}, ${1:name}]{${3:Подпись}}",
       "    $0",
       ""
     ]
@@ -59,7 +59,7 @@
     "body": [
       "Код приведён в~\\lstref{${2/^(?:.*\\/)?(.*?)(?:\\.[^.\\/]*)?$/$1/}}.",
       "",
-      "\\suaicode[${1|Python,C,C++,Java,SQL,bash,HTML|}]{${2:main.py}}{${3:Подпись}}",
+      "\\suaicode[${1|Python,C,C++,C#,Java,JavaScript,TypeScript,Go,Kotlin,Rust,SQL,bash,HTML,JSON,YAML,Dockerfile|}]{${2:main.py}}{${3:Подпись}}",
       "$0"
     ]
   }

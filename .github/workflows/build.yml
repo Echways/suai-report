@@ -7,7 +7,7 @@ on:
   workflow_call:
 
 jobs:
-  # Логика команды suai, TeX не нужен
+  # Логика команды suai, TeX не нужен: тесты пакета здесь пропускаются
   test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -35,6 +35,9 @@ jobs:
 
       - name: Python
         run: command -v python3 || (apt-get update && apt-get install -y --no-install-recommends python3)
+
+      - name: Тесты пакета
+        run: python3 -m unittest discover -s tests -p test_sty.py -v
 
       - name: Демо-отчёт
         run: python3 scripts/suai.py build demo

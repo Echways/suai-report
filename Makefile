@@ -2,7 +2,7 @@
 #  make                   собрать демо-отчёт (PDF рядом с demo/main.tex)
 #  make watch             пересобирать демо при сохранении, в том числе src/suai-report.sty
 #  make open              собрать и открыть демо
-#  make test              тесты команды suai (без TeX)
+#  make test              тесты команды suai и, если есть xelatex, самого пакета
 #  make check             тесты, демо и свежая заготовка (как CI)
 #  make clean             удалить сборку демо
 #  make new DIR=../lab-2  новый отчёт (TITLE="..." — сразу с названием)
@@ -50,7 +50,7 @@ ctan: pdf
 	@python3 scripts/ctan.py package
 
 # Тег уходит в GitHub только после git push --follow-tags,
-# дальше CTAN-загрузка ждёт подтверждения в Actions
+# дальше Actions делает GitHub Release с архивом, на CTAN он загружается вручную
 release:
 	@test -n "$(VERSION)" || { echo "Укажи версию: make release VERSION=2.1"; exit 1; }
 	@python3 scripts/ctan.py release "$(VERSION)"

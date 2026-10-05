@@ -1,10 +1,58 @@
 # Изменения
 
 Разделы пишутся по-английски: текст раздела уходит в GitHub Release, а при
-пометке `<!-- announce -->` ещё и в рассылку CTAN. Новое пишется под
-`## Unreleased`, `make release VERSION=…` сам превратит его в раздел версии.
+пометке `<!-- announce -->` ещё и в объявление для CTAN (поле Announcement
+в `ctan.py form`). Новое пишется под `## Unreleased`,
+`make release VERSION=…` сам превратит его в раздел версии.
 
 ## Unreleased
+
+- A block (`\suailist`, `\suaitable`, `\suaieq`, …) now really ends at a
+  line starting with `\section`, `\begin`, `\end`, `\par`, `\clearpage`
+  and the like, as it always did at `\suai…`. Before, such a line was read
+  as one more item, and a block right above `\end{document}` stopped the
+  build with `File ended while scanning use of \__suai_line:w`.
+- A `lstlisting` (or an environment made with `\lstnewenvironment`) right
+  below a block or below the code of `\suaicode`, with no blank line in
+  between, keeps its first line of code.
+- A block or the code under `\suaicode` may be the last thing in a file
+  read with `\input`: the end of the file ends it.
+- `\suaitable`: a cell with spaces inside a formula, such as `$a + b$` or
+  `\( a + b \)`, no longer fails with `Missing $ inserted`. The longest
+  word of a column is now measured by typesetting the cell instead of
+  cutting it at spaces, so `\textbf{several words}` counts as several
+  words too. Column widths of other tables are unchanged.
+- Listings: an unknown language no longer stops the build with
+  `Couldn't load requested language`. The code is typeset without
+  highlighting and the log gets the warning `Язык листинга '…' неизвестен`.
+  This holds for `\suaicode`, `\lstset{language=…}` and `lstlisting` alike.
+- Listings: JavaScript, TypeScript, Kotlin, Rust, JSON, YAML and Dockerfile
+  are defined by the package (comments, strings, main keywords), next to
+  the languages of `listings` itself.
+- Listings: short language names `cpp`, `cs`, `csharp`, `js`, `ts`, `py`,
+  `kt`, `rs`, `yml`, `docker`; `\suaicode[C#]{…}` works as written.
+- VS Code: the `lst` and `code` snippets and the `\suaicode` completion
+  offer the new languages, C# and Go.
+- Tables typed by hand (`tabular`, `tabularx`, `longtable`) are set with
+  the line spacing of the text, like `\suaitable` always was: GOST 7.32-2017
+  names no other spacing for tables. They used to be single-spaced, and
+  the `\singlespacing` behind it broke the paragraph around a `tabular`
+  and put an empty line above every such table.
+  `\renewcommand{\suaitablestretch}{1}` makes all tables, `\suaitable`
+  included, single-spaced.
+- Lists and `\suaieq`: the full stop of an abbreviation at the end of an
+  item (`и т. д.`, `и т. п.`, `и др.`, `и пр.`, `г.`, `гг.`, `вв.`, `руб.`,
+  `коп.`, `тыс.`, `шт.`, `экз.`, `стр.`) is kept: `и т. д.;` instead of
+  `и т. д;`.
+- A `%` comment in a line of a block belongs to that line only. Before, it
+  swallowed the line end and glued the line to the next one. A line that is
+  only a comment is skipped, `%` inside braces (`\url{…a%20b}`) is kept.
+- `\suaitable`, `\suaieq`: a `|` inside a formula (`$|x|$`, `\( a | b \)`)
+  no longer splits the cell.
+- The PDF bookmark of an appendix carries its letter: `Приложение А. Title`.
+- `suai new --title` and `suai next --title`: `& _ ^` and a lone `$` in
+  the title are escaped like `%` and `#`, `$…$` stays a formula, and a title
+  with `=` is put in braces. Such titles used to stop the build.
 
 ## 2.6 — 2026-10-02
 
