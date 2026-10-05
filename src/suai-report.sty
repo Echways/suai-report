@@ -353,6 +353,125 @@
        код набран без подсветки}%
      \suai@lstlanguage{}}}
 
+% Листинг с подписью на следующей странице начинается строкой
+% «Продолжение листинга N», как таблица: рамка закрывается внизу
+% страницы и открывается под этой строкой. В listings такого нет,
+% страницы он не видит. Поэтому код собирается в бокс и делится по
+% страницам здесь; листинг, который помещается целиком, встаёт на
+% страницу теми же строками, что и раньше. Без строки:
+% \renewcommand{\suailistingcontinued}{}. Листинг без подписи, плавающий
+% или стоящий внутри бокса (minipage, ячейка) делится по-старому.
+\newcommand{\suailistingcontinued}{Продолжение листинга~\thelstlisting}
+\newif\ifsuai@lstsplit
+\newbox\suai@lstbox                    % код целиком
+\newbox\suai@lstpart                   % его часть для текущей страницы
+\newbox\suai@lsthead                   % строка продолжения и верх рамки
+\newbox\suai@lstfoot                   % низ рамки
+\newdimen\suai@lstroom
+
+\def\suai@lstcheck{%
+  \suai@lstsplitfalse
+  \lst@ifdisplaystyle\lst@ifbox\else
+    \ifx\lst@float\relax \ifx\lst@multicols\@empty \ifnum\col@number=\@ne
+      \ifvmode\ifinner\else
+        \ifx\lst@caption\@empty\else \ifx\lst@title\@empty
+          \if\relax\detokenize\expandafter{\suailistingcontinued}\relax\else
+            \lst@IfSubstring t\lst@captionpos{\suai@lstsplittrue}{}%
+          \fi
+        \fi\fi
+      \fi\fi
+    \fi\fi\fi
+  \fi\fi}
+
+% Подпись и отбивка под ней. \vskip из listings попадает в ещё не
+% законченный абзац подписи, его \nobreak остаётся в строке, а не перед
+% отбивкой, и подпись могла остаться внизу страницы одна. \allowbreak
+% перед подписью стоит уже после метки: страница рвалась на нём, и
+% \pageref с якорем ссылки показывали на предыдущую.
+\def\suai@lstcap{%
+  \let\allowbreak\relax
+  \suai@lst@MakeCaption t%
+  \unpenalty \skip@\lastskip \unskip \nobreak \vskip\skip@
+  \xdef\suai@lstdepth{\the\prevdepth}}
+
+% Под подписью должно хватить места на три строки текста, иначе листинг
+% уходит на следующую страницу весь: \penalty9999 даёт TeX заметить, что
+% места нет, и взять разрыв перед подписью. \prevdepth переносится в бокс
+% и обратно: по нему listings ставит верх рамки.
+\def\suai@lstbegin{%
+  \xdef\suai@lstdepth{\the\prevdepth}%
+  \setbox\suai@lstpart\vbox{\prevdepth\suai@lstdepth\relax \suai@lstcap}%
+  \unvbox\suai@lstpart
+  \penalty\@M \vskip 3\baselineskip \penalty9999
+  \vskip-3\baselineskip \penalty\@M
+  \let\suai@lstcapdepth\suai@lstdepth
+  \global\setbox\suai@lsthead\vbox{\suai@lstcontinued}%
+  \setbox\suai@lstbox\vbox\bgroup \prevdepth\suai@lstcapdepth\relax}
+
+% та же подпись без номера, метки и строки в списке листингов
+\def\suai@lstcontinued{%
+  \let\lst@HRefStepCounter\@gobble \let\refstepcounter\@gobble
+  \let\lst@label\@empty \let\lst@ifnolol\iftrue
+  \let\lst@title\suailistingcontinued
+  \suai@lstcap}
+
+% Края рамки рисует сам listings, пока его настройки ещё действуют.
+\def\suai@lstend{%
+  \par
+  \global\setbox\suai@lsthead\vbox{%
+    \unvbox\suai@lsthead \prevdepth\suai@lstdepth\relax
+    \ifx\lst@frametshape\@empty\else \lst@frameInit \fi}%
+  \global\setbox\suai@lstfoot\vbox{%
+    \ifx\lst@framebshape\@empty\else \lst@frameExit\par \fi}%
+  \xdef\suai@lstdepth{\the\prevdepth}%
+  \egroup
+  \begingroup
+    \splittopskip\z@skip \splitmaxdepth\z@
+    \vbadness\@M \vfuzz\maxdimen
+    \suai@lstoutput
+  \endgroup
+  \prevdepth\suai@lstdepth\relax}
+
+% На страницу идёт столько строк, сколько осталось места, считая низ
+% рамки; остальное — на следующую, под строку продолжения.
+\def\suai@lstoutput{%
+  \suai@lstroom\pagegoal
+  \ifdim\suai@lstroom=\maxdimen \suai@lstroom\vsize \fi
+  \advance\suai@lstroom-\pagetotal \advance\suai@lstroom-\pagedepth
+  \ifdim\dimexpr\ht\suai@lstbox+\dp\suai@lstbox\relax>\suai@lstroom
+    \advance\suai@lstroom-\ht\suai@lstfoot
+    \advance\suai@lstroom-\dp\suai@lstfoot
+    \setbox\suai@lstpart\vsplit\suai@lstbox to\suai@lstroom
+    \setbox\suai@lstpart\vbox{\unvbox\suai@lstpart}%
+  \else
+    \setbox\suai@lstpart\box\voidb@x
+  \fi
+  \ifdim\ht\suai@lstpart>\z@
+    \unvbox\suai@lstpart \unvcopy\suai@lstfoot \break
+    \unvcopy\suai@lsthead \penalty\@M
+    \expandafter\suai@lstoutput
+  \else
+    \unvbox\suai@lstbox
+  \fi}
+
+% между верхом рамки и первой строкой кода страница не рвётся
+\lst@AddToHook{Init}{\ifsuai@lstsplit\ifvmode\nobreak\fi\fi}
+
+% listings зовёт \lst@MakeCaption дважды: t перед кодом, b после него.
+% Подмена — после caption, который правит эту же команду в начале
+% документа.
+\def\suai@lstcaption#1{%
+  \if t#1%
+    \suai@lstcheck
+    \ifsuai@lstsplit \suai@lstbegin \else \suai@lst@MakeCaption t\fi
+  \else
+    \ifsuai@lstsplit \suai@lstend \fi
+    \suai@lst@MakeCaption b%
+  \fi}
+\AddToHook{begindocument/end}{%
+  \let\suai@lst@MakeCaption\lst@MakeCaption
+  \let\lst@MakeCaption\suai@lstcaption}
+
 %%---------------------------------------------------------------------
 %%  7. ПРИЛОЖЕНИЯ (ГОСТ 7.32-2017, п. 6.14)
 %%---------------------------------------------------------------------

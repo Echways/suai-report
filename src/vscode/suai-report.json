@@ -24,7 +24,8 @@
     {"name": "lstref", "arg": {"format": "{}", "snippet": "lstref{${1}}"}, "doc": "«листинге 1». Префикс lst: можно не писать."},
     {"name": "formref", "arg": {"format": "{}", "snippet": "formref{${1}}"}, "doc": "«формуле (1)». Префикс eq: можно не писать."},
     {"name": "suaiheadfont", "doc": "Шрифт заголовков; без полужирного: \\renewcommand{\\suaiheadfont}{\\normalfont\\fontsize{14}{17}\\selectfont}", "unusual": true},
-    {"name": "suaitablestretch", "doc": "Интервал в таблицах, по умолчанию как в тексте; одинарный: \\renewcommand{\\suaitablestretch}{1}", "unusual": true}
+    {"name": "suaitablestretch", "doc": "Интервал в таблицах, по умолчанию как в тексте; одинарный: \\renewcommand{\\suaitablestretch}{1}", "unusual": true},
+    {"name": "suailistingcontinued", "doc": "Строка над частью листинга на следующей странице, по умолчанию «Продолжение листинга N»; без неё: \\renewcommand{\\suailistingcontinued}{}", "unusual": true}
   ],
   "envs": [],
   "keys": {

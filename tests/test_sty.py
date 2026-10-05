@@ -19,6 +19,10 @@ DOC = """\\documentclass[a4paper,14pt]{extarticle}
 LINES = "\\ExplSyntaxOn\\typeout{LINES=\\seq_count:N \\g__suai_lines_seq}\\ExplSyntaxOff\n"
 
 MARKS = "\\lstset{keywordstyle=\\typeout{KEYWORD}, commentstyle=\\typeout{COMMENT}}\n"
+# строка продолжения пишет в лог страницу, на которую попала
+CONTINUED = ("\\renewcommand{\\suailistingcontinued}{Продолжение листинга~\\thelstlisting"
+             "\\edef\\x{\\write-1{CONTINUED \\thelstlisting\\space PAGE "
+             "\\noexpand\\thepage}}\\x}\n")
 UNKNOWN = "Язык листинга %s"
 
 LANGUAGES = {
@@ -48,6 +52,11 @@ ALIASES = {
 
 def code(language, line):
     return f"\\suaicode[{language}]{{Код}}\n  {line}\n\n"
+
+
+def long_code(lines, first="echo 0"):
+    rest = "".join(f"  echo {n}\n" for n in range(1, lines))
+    return f"\\suaicode[bash, long]{{Код}}\n  {first}\n{rest}\n"
 
 
 @unittest.skipIf(shutil.which("xelatex") is None, "нет xelatex")
@@ -213,6 +222,44 @@ class StyTest(unittest.TestCase):
     def test_yaml_apostrophe_does_not_open_string(self):
         log = self.build(MARKS + code("YAML", "note: don't stop\n  enabled: true"))
         self.assertIn("KEYWORD", log)
+
+    def test_long_listing_is_continued(self):
+        """Над частью листинга на новой странице — «Продолжение листинга N»."""
+        log = self.build(CONTINUED + long_code(100) + code("bash", "echo"))
+        self.assertEqual(re.findall(r"CONTINUED (\S+) PAGE (\d+)", log),
+                         [("1", "2"), ("1", "3")])
+
+    def test_listing_on_one_page_is_not_continued(self):
+        log = self.build(CONTINUED + long_code(20) + "\\newpage\n" + long_code(20))
+        self.assertNotIn("CONTINUED", log)
+
+    def test_listing_without_number_is_not_continued(self):
+        """Без подписи номера нет, плавающий и в боксе не делятся."""
+        lines = "".join(f"echo {n}\n" for n in range(100))
+        log = self.build(
+            CONTINUED + "\\begin{lstlisting}\n" + lines + "\\end{lstlisting}\n"
+            + "\\begin{lstlisting}[float, caption=Код]\necho\n\\end{lstlisting}\n"
+            + "\\begin{minipage}{\\textwidth}\n"
+            + "\\begin{lstlisting}[caption=Код]\necho\n\\end{lstlisting}\n"
+            + "\\end{minipage}\n")
+        self.assertNotIn("CONTINUED", log)
+        self.assertIn("(3 pages", log)
+
+    def test_listing_continuation_can_be_switched_off(self):
+        log = self.build("\\renewcommand{\\suailistingcontinued}{}\n" + long_code(100))
+        self.assertIn("(3 pages", log)
+
+    def test_listing_caption_stays_with_code(self):
+        """У низа страницы подпись не остаётся без кода."""
+        first = "@\\write-1{CODE PAGE \\thepage}@echo 0"
+        for pars in range(29, 34):
+            with self.subTest(pars):
+                log = self.build("\\lstset{escapechar=@}\n" + "Абзац.\\par\n" * pars
+                                 + long_code(12, first))
+                aux = (self.root / "main.aux").read_text(encoding="utf-8")
+                caption = re.search(r"\\newlabel\{lst:long\}\{\{1\}\{(\d+)\}", aux)
+                self.assertEqual(re.search(r"CODE PAGE (\d+)", log).group(1),
+                                 caption.group(1))
 
     def test_snippet_languages_are_known(self):
         lists = {choice for f in sorted(suai.VSCODE.glob("suai*"))

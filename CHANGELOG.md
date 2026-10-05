@@ -7,6 +7,17 @@
 
 ## Unreleased
 
+- Listings: a captioned listing that runs over a page now starts each next
+  page with `Продолжение листинга N`, the way a table does. The frame is
+  closed at the bottom of the page and opened again under that line. This
+  holds for `\suaicode` and `lstlisting` alike; a listing that fits on its
+  page is typeset exactly as before. To switch the line off:
+  `\renewcommand{\suailistingcontinued}{}`.
+- Listings: a caption no longer stays at the bottom of a page without its
+  code. A listing needs room for three lines of text under the caption,
+  otherwise it moves to the next page as a whole, and `\pageref` to it
+  gives that page.
+
 ## 2.7 — 2026-10-05
 
 - A block (`\suailist`, `\suaitable`, `\suaieq`, …) now really ends at a
