@@ -7,6 +7,8 @@
 
 ## Unreleased
 
+## 2.7.1 — 2026-10-06
+
 - Listings: a captioned listing that runs over a page now starts each next
   page with `Продолжение листинга N`, the way a table does. The frame is
   closed at the bottom of the page and opened again under that line. This
