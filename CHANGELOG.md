@@ -7,6 +7,8 @@
 
 ## Unreleased
 
+## 2.7 — 2026-10-05
+
 - A block (`\suailist`, `\suaitable`, `\suaieq`, …) now really ends at a
   line starting with `\section`, `\begin`, `\end`, `\par`, `\clearpage`
   and the like, as it always did at `\suai…`. Before, such a line was read
