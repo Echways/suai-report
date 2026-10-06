@@ -157,6 +157,15 @@ class StyTest(unittest.TestCase):
             ["файлы, папки и т. д.;", "отчёты и др.;", "данные за 2026 г.;",
              "вес 5 кг;", "прочее и т.п."])
 
+    def test_nested_enumerate_has_no_latin_letters(self):
+        """Второй уровень enumerate — русские буквы со скобкой, как первый
+        уровень gostenum: латинского (a) в отчёте быть не должно."""
+        log = self.build("\\makeatletter\n\\begin{enumerate}\n\\item один\n"
+                         "\\begin{enumerate}\n\\item два\\typeout{LABEL=\\@itemlabel}\n"
+                         "\\item три\\typeout{LABEL=\\@itemlabel}\n"
+                         "\\end{enumerate}\n\\end{enumerate}\n")
+        self.assertEqual(re.findall(r"LABEL=\{?([^{}]*)", log), ["а)", "б)"])
+
     def test_table_spacing_follows_text(self):
         """Интервал в таблицах как в тексте; \\suaitablestretch — один на все."""
         body = ("\\typeout{TEXT=\\the\\baselineskip}\n"
@@ -200,6 +209,20 @@ class StyTest(unittest.TestCase):
                 self.assertIn("KEYWORD", chunk)
                 if " c" in line:
                     self.assertIn("COMMENT", chunk)
+
+    def test_keywords_are_not_bold(self):
+        """Полужирный — только для заголовков (ГОСТ 7.32-2017, п. 6.1.1):
+        в листинге его нет ни в обычном стиле, ни в цветном."""
+        for setup in "", "\\lstset{style=gostcolor}\n":
+            with self.subTest(setup):
+                log = self.build("\\def\\bfseries{\\typeout{BOLD}}\n" + setup
+                                 + code("C++", "#include <cmath>\n  int x; // c"))
+                self.assertEqual(log.count("BOLD"), 0)
+
+    def test_keywords_can_be_made_bold(self):
+        log = self.build("\\def\\bfseries{\\typeout{BOLD}}\n"
+                         "\\lstset{keywordstyle=\\bfseries}\n" + code("C++", "int x;"))
+        self.assertIn("BOLD", log)
 
     def test_unknown_language_is_not_an_error(self):
         log = self.build(

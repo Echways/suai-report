@@ -126,9 +126,13 @@ def archive_entries(repo: Path = REPO) -> dict[str, bytes]:
             hint = " (собери демо: make pdf)" if src.endswith(".pdf") else ""
             die(f"нет файла {src}{hint}")
         entries[name] = path.read_bytes()
-    for img in sorted((repo / "demo" / "images").iterdir()):
-        if img.is_file() and not img.name.startswith("."):
-            entries[f"images/{img.name}"] = img.read_bytes()
+    # картинки и файлы с кодом, которые читает демо
+    for folder in ("images", "code"):
+        if not (repo / "demo" / folder).is_dir():
+            continue
+        for path in sorted((repo / "demo" / folder).iterdir()):
+            if path.is_file() and not path.name.startswith("."):
+                entries[f"{folder}/{path.name}"] = path.read_bytes()
     entries["CHANGELOG.md"] = changelog_for_archive(
         (repo / "CHANGELOG.md").read_text(encoding="utf-8")).encode()
     return entries

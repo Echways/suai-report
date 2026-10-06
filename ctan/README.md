@@ -22,8 +22,8 @@ and Cursor.
 | --- | --- |
 | `suai-report.sty` | the package |
 | `suai-report-template.tex` | an empty report to start from |
-| `suai-report-demo.tex`, `suai-report-demo.pdf` | a report showing every feature (in Russian) |
-| `images/scheme.png` | a picture used by the demo |
+| `suai-report-demo.tex`, `suai-report-demo.pdf` | a report showing every command (in Russian) |
+| `images/`, `code/` | pictures and a source file used by the demo |
 
 ## Usage
 
@@ -37,9 +37,9 @@ and Cursor.
   type       = Отчет о лабораторной работе,
   number     = 1,
   title      = Название работы,
-  course     = Название дисциплины,
-  group      = 4414,
-  student    = И. И. Студентов,
+  course     = Информатика,
+  group      = 4419,
+  student    = П. П. Петров,
   date       = today,
 }
 
@@ -52,17 +52,19 @@ and Cursor.
 
 Compile with `latexmk -xelatex` (add `biber` if you use biblatex).
 
-Full documentation (in Russian), the `suai` command-line tool that creates
-and builds reports, and VS Code settings with snippets are in the
-repository: https://github.com/Echways/suai-report
+Full documentation (in Russian) is in the `docs` folder of the repository:
+https://github.com/Echways/suai-report. The repository also has the `suai`
+command-line tool that creates and builds reports, and VS Code settings
+with snippets.
 
 ## Кратко по-русски
 
 Шаблон отчёта ГУАП по ГОСТ 7.32-2017 на XeLaTeX: титульный лист по
 официальному бланку, оформление ставится само, в `main.tex` пишется только
-текст. Пример — `suai-report-demo.tex` и `suai-report-demo.pdf`, заготовка —
-`suai-report-template.tex`. Полное описание, команда `suai` и настройки VS Code —
-в репозитории по ссылке выше.
+текст. Пример со всеми командами — `suai-report-demo.tex`
+и `suai-report-demo.pdf`, заготовка — `suai-report-template.tex`. Документация
+(папка `docs`), команда `suai` и настройки VS Code — в репозитории по ссылке
+выше.
 
 ## License
 

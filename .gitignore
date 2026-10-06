@@ -4,3 +4,7 @@ build/
 /dist/
 __pycache__/
 .vscode/
+*.aux
+*.fdb_latexmk
+*.fls
+*.log

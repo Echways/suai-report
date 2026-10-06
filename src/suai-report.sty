@@ -204,10 +204,14 @@
 \newlist{gostenum}{enumerate}{2}
 \setlist[gostenum,1]{label=\gostletter*)}
 \setlist[gostenum,2]{label=\arabic*)}
+% второй уровень enumerate — тоже русские буквы, а не латинские (a), (b)
+\setlist[enumerate,2]{label=\gostletter*)}
 
 %%---------------------------------------------------------------------
 %%  6. ЛИСТИНГИ
-%%  Полужирного нет: по п. 6.1.1 он только для заголовков.
+%%  Полужирного нет: по п. 6.1.1 он только для заголовков. В listings
+%%  ключевые слова полужирные по умолчанию, поэтому keywordstyle пустой;
+%%  вернуть: \lstset{keywordstyle=\bfseries}.
 %%---------------------------------------------------------------------
 \renewcommand{\lstlistingname}{Листинг}
 \definecolor{suaiFrame}{HTML}{B5B5B5}
@@ -241,7 +245,7 @@
   showstringspaces=false, tabsize=4, columns=fullflexible,
   keepspaces=true, extendedchars=true, upquote=true,
   captionpos=t, aboveskip=12pt, belowskip=12pt,
-  commentstyle=\itshape, stringstyle=\normalfont\ttfamily,
+  keywordstyle=, commentstyle=\itshape, stringstyle=\normalfont\ttfamily,
 }
 \lstdefinestyle{gostcolor}{
   style=gost,
@@ -473,7 +477,7 @@
   \let\lst@MakeCaption\suai@lstcaption}
 
 %%---------------------------------------------------------------------
-%%  7. ПРИЛОЖЕНИЯ (ГОСТ 7.32-2017, п. 6.14)
+%%  7. ПРИЛОЖЕНИЯ (ГОСТ 7.32-2017, п. 6.17)
 %%---------------------------------------------------------------------
 \newcounter{suaiapp}
 \newcommand{\suaiappletter}{\suai@upper{\value{suaiapp}}}

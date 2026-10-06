@@ -7,6 +7,23 @@
 
 ## Unreleased
 
+- Listings: keywords are no longer bold. GOST 7.32-2017 (6.1.1) keeps bold
+  type for headings, and the package said so, but the default of `listings`
+  was still in effect. The line breaks of a listing do not change. To get
+  bold keywords back: `\lstset{keywordstyle=\bfseries}`.
+- A nested `enumerate` numbers its second level with Russian letters, `а)`,
+  `б)`, like the first level of `gostenum`, instead of the Latin `(a)`,
+  `(b)`.
+- Documentation: the README is now a short entry page, the details moved
+  to `docs/`: installation, the `suai` command, the title page, every
+  command with an example, settings for a department's own rules, VS Code,
+  what the package sets up by GOST 7.32-2017, troubleshooting and
+  development notes.
+- The demo report is rewritten: it now uses every command of the package,
+  including `\suaienum`, `\suainum`, `\suaisection`, `\suaiapp`, a listing
+  read from a file and a table and a listing that run over a page. The CTAN
+  archive ships the `code/` folder of the demo next to `images/`.
+
 ## 2.7.1 — 2026-10-06
 
 - Listings: a captioned listing that runs over a page now starts each next

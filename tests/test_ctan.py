@@ -147,11 +147,14 @@ class ArchiveTest(unittest.TestCase):
                 (repo / src).write_bytes(b"x")
             (repo / "demo" / "images").mkdir(parents=True, exist_ok=True)
             (repo / "demo" / "images" / "scheme.png").write_bytes(b"png")
+            (repo / "demo" / "code").mkdir()
+            (repo / "demo" / "code" / "stats.cpp").write_bytes(b"cpp")
             (repo / "CHANGELOG.md").write_text(CHANGELOG, encoding="utf-8")
             entries = ctan.archive_entries(repo)
             self.assertIn("README.md", entries)
             self.assertIn("suai-report-demo.pdf", entries)
             self.assertIn("images/scheme.png", entries)
+            self.assertIn("code/stats.cpp", entries)
             self.assertEqual([n for n in entries if ctan.forbidden(n)], [])
 
     def test_missing_pdf(self):
