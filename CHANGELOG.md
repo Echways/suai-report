@@ -1,10 +1,3 @@
-# Изменения
-
-Разделы пишутся по-английски: текст раздела уходит в GitHub Release, а при
-пометке `<!-- announce -->` ещё и в объявление для CTAN (поле Announcement
-в `ctan.py form`). Новое пишется под `## Unreleased`,
-`make release VERSION=…` сам превратит его в раздел версии.
-
 ## Unreleased
 
 - Listings: keywords are no longer bold. GOST 7.32-2017 (6.1.1) keeps bold

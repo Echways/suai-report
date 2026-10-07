@@ -1,16 +1,3 @@
-#  make install           один раз: suai-report.sty в ~/texmf, команда suai в ~/.local/bin
-#  make                   собрать демо-отчёт (PDF рядом с demo/main.tex)
-#  make watch             пересобирать демо при сохранении, в том числе src/suai-report.sty
-#  make open              собрать и открыть демо
-#  make test              тесты команды suai и, если есть xelatex, самого пакета
-#  make check             тесты, демо и свежая заготовка (как CI)
-#  make clean             удалить сборку демо
-#  make new DIR=../lab-2  новый отчёт (TITLE="..." — сразу с названием)
-#  make ctan              архив для CTAN: dist/suai-report.zip
-#  make release VERSION=2.1  версия в suai-report.sty и CHANGELOG, коммит и тег v2.1
-#
-#  Всё, что правится, лежит в src/. В отчётах Makefile нет: там команда suai.
-
 SUAI = python3 scripts/suai.py
 TITLE_ARG = $(if $(TITLE),--title "$(TITLE)")
 
@@ -49,8 +36,6 @@ uninstall:
 ctan: pdf
 	@python3 scripts/ctan.py package
 
-# Тег уходит в GitHub только после git push --follow-tags,
-# дальше Actions делает GitHub Release с архивом, на CTAN он загружается вручную
 release:
 	@test -n "$(VERSION)" || { echo "Укажи версию: make release VERSION=2.1"; exit 1; }
 	@python3 scripts/ctan.py release "$(VERSION)"

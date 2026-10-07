@@ -1,6 +1,3 @@
-"""Документация не отстаёт от кода: всё, что есть в suai-report.sty
-и в команде suai, описано в README и docs/, а ссылки между страницами целы."""
-
 import re
 import sys
 import unittest
@@ -21,18 +18,15 @@ FENCE_RE = re.compile(r"^```.*?^```", re.M | re.S)
 HEADING_RE = re.compile(r"^#+\s+(.+?)\s*$", re.M)
 LINK_RE = re.compile(r"\]\(([^)\s]+)\)|(?:src|href)=\"([^\"]+)\"")
 
-# служебные команды пакета: в отчётах не пишутся
-INTERNAL = {"suairef", "suaiappletter"}
-# настройки из преамбулы: в демо их нет, оно набрано по умолчанию
-SETTINGS = {"suaiheadfont", "suaitablestretch", "suailistingcontinued"}
+INTERNAL_COMMANDS = {"suairef", "suaiappletter"}
+PREAMBLE_SETTINGS = {"suaiheadfont", "suaitablestretch", "suailistingcontinued"}
 
 
 def read(path):
     return path.read_text(encoding="utf-8")
 
 
-def anchors(text):
-    """Якоря заголовков, как их строит GitHub."""
+def github_anchors(text):
     out = set()
     for title in HEADING_RE.findall(FENCE_RE.sub("", text)):
         slug = re.sub(r"[^\w\- ]", "", title.lower()).replace(" ", "-")
@@ -45,7 +39,7 @@ class DocsTest(unittest.TestCase):
     def setUpClass(cls):
         cls.sty = read(suai.STY)
         cls.docs = "\n".join(read(p) for p in PAGES)
-        cls.commands = set(COMMAND_RE.findall(cls.sty)) - INTERNAL
+        cls.commands = set(COMMAND_RE.findall(cls.sty)) - INTERNAL_COMMANDS
 
     def missing(self, names, text, pattern="`%s`"):
         return sorted(n for n in names if pattern % n not in text)
@@ -86,7 +80,7 @@ class DocsTest(unittest.TestCase):
 
     def test_demo_uses_every_command(self):
         demo = read(suai.DEMO)
-        missing = sorted(c for c in self.commands - SETTINGS if f"\\{c}" not in demo)
+        missing = sorted(c for c in self.commands - PREAMBLE_SETTINGS if f"\\{c}" not in demo)
         self.assertEqual(missing, [])
 
     def test_links(self):
@@ -101,7 +95,7 @@ class DocsTest(unittest.TestCase):
                 target = (page.parent / path).resolve() if path else page
                 if not target.exists():
                     broken.append(f"{page.name}: {link}")
-                elif anchor and target.suffix == ".md" and anchor not in anchors(read(target)):
+                elif anchor and target.suffix == ".md" and anchor not in github_anchors(read(target)):
                     broken.append(f"{page.name}: {link}")
         self.assertEqual(broken, [])
 

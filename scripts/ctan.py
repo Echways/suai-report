@@ -42,9 +42,9 @@ ANNOUNCE = "<!-- announce -->"
 
 PROVIDES_RE = re.compile(r"(\\ProvidesPackage\{suai-report\}\[)(\d{4}/\d{2}/\d{2}) v([\d.]+)( )")
 VERSION_RE = re.compile(r"^\d+\.\d+(\.\d+)?$")
-# тире в заголовке — любое: обычный дефис в «## 2.1 - 2026-09-15» раньше
-# прятал весь раздел от check-tag, notes и архива для CTAN
-SECTION_RE = re.compile(r"^## (\S+)(?:\s*[-–—]\s*(\d{4}-\d{2}-\d{2}))?\s*$", re.M)
+HYPHEN_OR_DASH = "[-–—]"
+SECTION_RE = re.compile(
+    rf"^## (\S+)(?:\s*{HYPHEN_OR_DASH}\s*(\d{{4}}-\d{{2}}-\d{{2}}))?\s*$", re.M)
 
 FILES = {
     "README.md": "ctan/README.md",
@@ -54,7 +54,9 @@ FILES = {
     "suai-report-demo.tex": "demo/main.tex",
     "suai-report-demo.pdf": "demo/build/main.pdf",
 }
+DEMO_INPUT_FOLDERS = ("images", "code")
 FIELD_LIMITS = {"summary": 128, "description": 4096, "announcement": 8192}
+ACTIONS_SAFE_TO_REPEAT = {"validate"}
 
 
 def die(msg: str) -> None:
@@ -126,8 +128,7 @@ def archive_entries(repo: Path = REPO) -> dict[str, bytes]:
             hint = " (собери демо: make pdf)" if src.endswith(".pdf") else ""
             die(f"нет файла {src}{hint}")
         entries[name] = path.read_bytes()
-    # картинки и файлы с кодом, которые читает демо
-    for folder in ("images", "code"):
+    for folder in DEMO_INPUT_FOLDERS:
         if not (repo / "demo" / folder).is_dir():
             continue
         for path in sorted((repo / "demo" / folder).iterdir()):
@@ -233,8 +234,7 @@ def submit(action: str) -> None:
     body, ctype = multipart(form, ZIP.name, ZIP.read_bytes())
     req = urllib.request.Request(f"{API}/{action}", data=body, method="POST",
                                  headers={"Content-Type": ctype})
-    # upload не повторяется: при оборванном ответе пакет мог уже уйти на CTAN
-    status, raw = fetch(req, attempts=3 if action == "validate" else 1)
+    status, raw = fetch(req, attempts=3 if action in ACTIONS_SAFE_TO_REPEAT else 1)
     ok, lines = parse_response(status, raw)
     print(f"CTAN {action} suai {version}: HTTP {status}")
     for line in lines:
@@ -271,14 +271,15 @@ def cmd_form() -> None:
         print(f"── {key}\n{value}\n")
 
 
+def version_key(version: str) -> tuple[int, ...]:
+    return tuple(map(int, (version.split(".") + ["0"])[:3]))
+
+
 def bump(sty_text: str, changelog: str, version: str, date: datetime.date) -> tuple[str, str]:
     if not VERSION_RE.match(version):
         die(f"версия «{version}» должна быть вида 2.1 или 2.1.3")
     current, _ = sty_version(sty_text)
-    def key(v: str) -> tuple[int, ...]:
-        return tuple(map(int, (v.split(".") + ["0"])[:3]))
-
-    if key(version) <= key(current):
+    if version_key(version) <= version_key(current):
         die(f"версия {version} не больше текущей {current}")
     unreleased = section(changelog, "Unreleased")
     if unreleased is None or not unreleased[1]:

@@ -1,13 +1,5 @@
 name: release
 
-# Тег vX.Y (make release VERSION=X.Y && git push --follow-tags):
-#   проверки build.yml → архив для CTAN → GitHub Release с архивом,
-#   демо-PDF и текстом раздела из CHANGELOG.
-# На CTAN архив загружается вручную: скачай его из Release,
-# поля формы покажет python3 scripts/ctan.py form.
-# Ручной запуск (Run workflow) только собирает архив из выбранной ветки
-# (артефакт «ctan»), Release не создаётся.
-
 on:
   push:
     tags: ["v*"]
@@ -47,7 +39,6 @@ jobs:
           path: dist/suai-report.zip
           if-no-files-found: error
 
-  # Перезапуск того же тега обновляет файлы уже созданного Release
   release:
     needs: package
     if: github.ref_type == 'tag'

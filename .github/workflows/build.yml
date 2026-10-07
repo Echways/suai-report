@@ -2,12 +2,11 @@ name: build
 
 on:
   push:
-    branches: ["**"]   # теги проверяет release.yml, вызывая этот же workflow
+    branches: ["**"]
   pull_request:
   workflow_call:
 
 jobs:
-  # Логика команды suai, TeX не нужен: тесты пакета здесь пропускаются
   test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -24,8 +23,6 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m unittest discover -s tests -v
 
-  # Сборка тем же suai build, что и локально: аргументы latexmk
-  # из src/vscode/settings.json, suai-report.sty находится через TEXINPUTS
   pdf:
     needs: test
     runs-on: ubuntu-latest

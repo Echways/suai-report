@@ -6,12 +6,12 @@
   suai update             обновить .vscode в текущем отчёте
   suai build|watch|open|clean [DIR]
 
-Всё, что попадает в отчёты, лежит в src/: suai-report.sty, template.tex, vscode/.
 Работает в Linux, macOS и Windows (там ~ — это %USERPROFILE%).
 """
 
 import argparse
 import filecmp
+import itertools
 import json
 import os
 import re
@@ -29,14 +29,24 @@ REPO = Path(__file__).resolve().parent.parent
 SRC = REPO / "src"
 STY = SRC / "suai-report.sty"
 TEMPLATE = SRC / "template.tex"
-VSCODE = SRC / "vscode"  # копируется в .vscode/ отчёта
+VSCODE = SRC / "vscode"
 DEMO = REPO / "demo" / "main.tex"
 
 REPORT_GITIGNORE = "build/\n"
+LEGACY_PDF_NAME = "main.pdf"
 BIN = Path.home() / ".local" / "bin" / ("suai.cmd" if WINDOWS else "suai")
+CMD_FILE_ENCODING = "oem"
 
 SETUP_RE = re.compile(r"^\\suaisetup\{.*?^\}", re.M | re.S)
 TRAILING_NUM_RE = re.compile(r"(\d+)$")
+UNESCAPED_DOLLAR_RE = re.compile(r"(?<!\\)\$")
+
+TEXT_SPECIALS = "%#&_^"
+MATH_SPECIALS = "%#"
+
+HWND_BROADCAST = 0xFFFF
+WM_SETTINGCHANGE = 0x001A
+SMTO_ABORTIFHUNG = 0x0002
 
 
 def die(msg: str) -> None:
@@ -44,8 +54,7 @@ def die(msg: str) -> None:
     sys.exit(1)
 
 
-def write_text(path: Path, text: str) -> None:
-    """UTF-8 и LF на любой системе: Path.write_text в Windows дал бы CRLF."""
+def write_text_lf(path: Path, text: str) -> None:
     path.write_bytes(text.encode("utf-8"))
 
 
@@ -64,22 +73,19 @@ def tex_escape(text: str, chars: str) -> str:
 
 
 def tex_value(text: str) -> str:
-    """Значение \\suaisetup из обычного текста. % закомментировал бы строку,
-    # & _ ^ и $ без пары останавливают сборку: они экранируются, если ещё
-    не экранированы. $…$ — формула, внутри неё только % и #. Значение со
-    знаком = берётся в скобки, иначе его начало станет именем ключа."""
-    parts = re.split(r"(?<!\\)\$", text)
-    if len(parts) % 2 == 0:             # $ без пары — знак доллара
-        text = tex_escape(text, "%#&_^$")
+    parts = UNESCAPED_DOLLAR_RE.split(text)
+    dollars_are_paired = len(parts) % 2 == 1
+    if dollars_are_paired:
+        text = "$".join(
+            tex_escape(part, MATH_SPECIALS if inside_formula else TEXT_SPECIALS)
+            for part, inside_formula in zip(parts, itertools.cycle([False, True])))
     else:
-        text = "$".join(tex_escape(p, "%#" if i % 2 else "%#&_^")
-                        for i, p in enumerate(parts))
-    return f"{{{text}}}" if "=" in text else text
+        text = tex_escape(text, TEXT_SPECIALS + "$")
+    would_be_read_as_key = "=" in text
+    return f"{{{text}}}" if would_be_read_as_key else text
 
 
 def find_setup_source(target: Path, prefer: Path | None = None) -> Path:
-    """Титул из prefer (для next — из текущего отчёта), иначе из самого
-    свежего соседнего, иначе из демо."""
     if prefer is not None and read_setup_dir(prefer):
         return prefer / "main.tex"
     siblings = [
@@ -151,8 +157,6 @@ def latexmk_args() -> list[str]:
 
 
 def pdf_path(d: Path) -> Path:
-    """Готовый PDF, как его называет сборка из settings.json:
-    Databases/lab-3 -> Databases/lab-3/Databases-lab-3.pdf."""
     d = d.resolve()
     return d / f"{d.parent.name}-{d.name}.pdf"
 
@@ -162,8 +166,6 @@ def is_miktex() -> bool:
 
 
 def texmf_home() -> Path:
-    """Личное дерево TeX. У MiKTeX его нет, пока не зарегистрируешь:
-    это делает miktex_refresh."""
     home = ""
     kpsewhich = shutil.which("kpsewhich")
     if kpsewhich and not is_miktex():
@@ -180,8 +182,6 @@ def texmf_sty() -> Path:
 
 
 def miktex_refresh(register: bool) -> None:
-    """MiKTeX ищет файлы по базе имён: дерево надо зарегистрировать,
-    а базу обновлять после появления и удаления файла."""
     initexmf = shutil.which("initexmf")
     if initexmf is None:
         return
@@ -199,8 +199,6 @@ def miktex_refresh(register: bool) -> None:
 
 
 def link_sty(link: Path, target: Path) -> bool:
-    """Симлинк, а где нельзя (Windows без режима разработчика) — копия.
-    True, если получился симлинк."""
     link.parent.mkdir(parents=True, exist_ok=True)
     if link.is_symlink() or link.exists():
         link.unlink()
@@ -215,12 +213,11 @@ def link_sty(link: Path, target: Path) -> bool:
 
 
 def refresh_sty() -> str:
-    """Состояние установленного suai-report.sty: missing, ok или updated.
-    Симлинк свежий всегда, копию после git pull надо переписать."""
     installed = texmf_sty()
     if not installed.exists():
         return "missing"
-    if installed.is_symlink() or filecmp.cmp(STY, installed, shallow=False):
+    is_current = installed.is_symlink() or filecmp.cmp(STY, installed, shallow=False)
+    if is_current:
         return "ok"
     shutil.copyfile(STY, installed)
     return "updated"
@@ -230,10 +227,9 @@ def launcher() -> bytes:
     script = Path(__file__).resolve()
     if not WINDOWS:
         return f'#!/bin/sh\nexec python3 "{script}" "$@"\n'.encode()
-    # python3 в Windows нет или это заглушка магазина приложений
     text = f'@"{sys.executable}" "{script}" %*\r\n'
     try:
-        return text.encode("oem")       # .cmd читается в кодировке консоли
+        return text.encode(CMD_FILE_ENCODING)
     except (UnicodeEncodeError, LookupError):
         return ("@chcp 65001 >nul\r\n" + text).encode("utf-8")
 
@@ -245,9 +241,6 @@ def in_path(d: Path, path: str, sep: str = os.pathsep) -> bool:
 
 
 def add_to_user_path(d: Path) -> bool:
-    """Windows: дописать папку в PATH пользователя (HKCU\\Environment).
-    Тип значения сохраняется: в REG_EXPAND_SZ могут быть %ПЕРЕМЕННЫЕ%."""
-    import ctypes
     import winreg
     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment", 0,
                         winreg.KEY_READ | winreg.KEY_WRITE) as key:
@@ -259,12 +252,18 @@ def add_to_user_path(d: Path) -> bool:
             return False
         value = f"{value.rstrip(';')};{d}" if value.strip(";") else str(d)
         winreg.SetValueEx(key, "Path", 0, kind, value)
-    try:    # сообщить открытым программам, что окружение изменилось
-        ctypes.windll.user32.SendMessageTimeoutW(0xFFFF, 0x001A, 0, "Environment",
-                                                 0x0002, 5000, None)
+    notify_running_programs_of_new_environment()
+    return True
+
+
+def notify_running_programs_of_new_environment() -> None:
+    import ctypes
+    try:
+        ctypes.windll.user32.SendMessageTimeoutW(
+            HWND_BROADCAST, WM_SETTINGCHANGE, 0, "Environment",
+            SMTO_ABORTIFHUNG, 5000, None)
     except (AttributeError, OSError):
         pass
-    return True
 
 
 def path_hint(d: Path) -> str:
@@ -281,12 +280,12 @@ def path_hint(d: Path) -> str:
 def missing_tools() -> list[str]:
     tools = ["xelatex", "latexmk", "biber"]
     if is_miktex():
-        tools.append("perl")            # latexmk в MiKTeX без своего Perl
+        tools.append("perl")
     return [t for t in tools if shutil.which(t) is None]
 
 
 def open_editor(target: Path) -> None:
-    code = shutil.which("code")         # в Windows это code.cmd: нужен полный путь
+    code = shutil.which("code")
     if code is None:
         print("  VS Code (code) не найден — открой папку сам")
         return
@@ -349,10 +348,10 @@ def cmd_new(target: Path, title: str | None, no_open: bool,
     main, source = render_main(target, title, prefer)
     (target / "images").mkdir(parents=True, exist_ok=True)
     install_kit(target)
-    write_text(target / "main.tex", main)
+    write_text_lf(target / "main.tex", main)
     gitignore = target / ".gitignore"
     if not gitignore.exists():
-        write_text(gitignore, REPORT_GITIGNORE)
+        write_text_lf(gitignore, REPORT_GITIGNORE)
 
     print(f"Готово: {target}")
     print(f"  титул взят из {source}")
@@ -391,9 +390,13 @@ def cmd_update() -> None:
     report_sty_state()
 
 
+def texinputs() -> str:
+    report_dir_first = [".", str(SRC), ""]
+    return os.pathsep.join(report_dir_first)
+
+
 def run_latexmk(d: Path, *extra: str) -> None:
-    # «.» первой, иначе kpathsea может найти чужой main.tex
-    env = dict(os.environ, TEXINPUTS=os.pathsep.join([".", str(SRC), ""]))
+    env = dict(os.environ, TEXINPUTS=texinputs())
     latexmk = shutil.which("latexmk")
     if latexmk is None:
         die("не найден latexmk — нужен TeX Live или MiKTeX")
@@ -433,7 +436,13 @@ def cmd_open(d: Path) -> None:
 def cmd_clean(d: Path) -> None:
     shutil.rmtree(d / "build", ignore_errors=True)
     pdf_path(d).unlink(missing_ok=True)
-    (d / "main.pdf").unlink(missing_ok=True)       # прежнее имя PDF
+    (d / LEGACY_PDF_NAME).unlink(missing_ok=True)
+
+
+def survive_output_encoding_without_cyrillic() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
 
 
 def main() -> None:
@@ -451,11 +460,7 @@ def main() -> None:
     for name in ("build", "watch", "open", "clean"):
         sub.add_parser(name, help=HELP[name]).add_argument(
             "dir", type=Path, nargs="?", help="папка отчёта (по умолчанию текущая)")
-    # сообщения на русском не должны ронять команду, когда вывод
-    # перенаправлен в файл или трубу с кодировкой без кириллицы
-    for stream in (sys.stdout, sys.stderr):
-        if hasattr(stream, "reconfigure"):
-            stream.reconfigure(errors="replace")
+    survive_output_encoding_without_cyrillic()
     args = parser.parse_args()
 
     if args.cmd == "new":

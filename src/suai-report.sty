@@ -61,7 +61,6 @@
 \setlength{\parskip}{0pt}
 \clubpenalty=10000
 \widowpenalty=10000
-% строка с длинным словом лучше чуть разреженная, чем вылезшая на поле
 \tolerance=1000
 \emergencystretch=3em
 \graphicspath{{images/}{./}}
@@ -169,9 +168,8 @@
 \newcolumntype{Y}{>{\centering\arraybackslash}X}
 \setlength{\LTcapwidth}{\textwidth}
 % Интервал в таблицах — как в тексте: другого п. 6.1.1 не называет.
-% Одинарный, если его допускает методичка:
-% \renewcommand{\suaitablestretch}{1}. \setstretch, а не \singlespacing:
-% в той зашит \vskip, он рвёт абзац и отбивает таблицу на лишнюю строку.
+% \setstretch, а не \singlespacing: в той зашит \vskip, он рвёт абзац
+% и отбивает таблицу на лишнюю строку.
 \newcommand{\suaitablestretch}{}
 \newcommand\suai@tablestretch{%
   \if\relax\detokenize\expandafter{\suaitablestretch}\relax\else
@@ -186,7 +184,7 @@
 % (так требует нормоконтроль ГУАП). Второй уровень — с отступа 2 см.
 \setlist{nosep,topsep=0pt,partopsep=0pt,parsep=0pt,itemsep=0pt,
          wide=\parindent,labelsep=0.5em}
-\setlist[2]{wide=2cm}                  % по глубине, а не по типу списка
+\setlist[2]{wide=2cm}
 \setlist[itemize,1]{label={--}}
 \setlist[itemize,2]{label={--}}
 \setlist[enumerate,1]{label=\arabic*)}
@@ -204,14 +202,12 @@
 \newlist{gostenum}{enumerate}{2}
 \setlist[gostenum,1]{label=\gostletter*)}
 \setlist[gostenum,2]{label=\arabic*)}
-% второй уровень enumerate — тоже русские буквы, а не латинские (a), (b)
 \setlist[enumerate,2]{label=\gostletter*)}
 
 %%---------------------------------------------------------------------
 %%  6. ЛИСТИНГИ
-%%  Полужирного нет: по п. 6.1.1 он только для заголовков. В listings
-%%  ключевые слова полужирные по умолчанию, поэтому keywordstyle пустой;
-%%  вернуть: \lstset{keywordstyle=\bfseries}.
+%%  Полужирного нет: по п. 6.1.1 он только для заголовков, поэтому
+%%  keywordstyle пустой.
 %%---------------------------------------------------------------------
 \renewcommand{\lstlistingname}{Листинг}
 \definecolor{suaiFrame}{HTML}{B5B5B5}
@@ -238,8 +234,6 @@
   framexleftmargin=\suai@lstgutter,
   xleftmargin=\dimexpr\suai@lstgutter+\suai@lstsep\relax,
   xrightmargin=\suai@lstsep,
-  % рвать можно и не на пробеле: длинный адрес или вызов без пробелов
-  % иначе уходит за рамку
   breaklines=true, breakatwhitespace=false,
   postbreak=\mbox{\textcolor{suaiFrame}{$\hookrightarrow$}\space},
   showstringspaces=false, tabsize=4, columns=fullflexible,
@@ -272,8 +266,8 @@
   \suai@lstchars\lst@ProcessOther{"2010}{"2028}%
   \suai@lstchars\lst@ProcessOther{"2116}{"2117}}
 
-% Языки, которых в listings нет: комментарии, строки и основные ключевые
-% слова. Заданный здесь язык listings в своих файлах уже не ищет.
+% Языки, которых в listings нет. Заданный здесь язык listings в своих
+% файлах уже не ищет.
 \lstdefinelanguage{JavaScript}{
   sensitive=true,
   morekeywords={async,await,break,case,catch,class,const,continue,default,
@@ -329,8 +323,7 @@
   morestring=[b]", morestring=[b]',
 }
 
-% Короткие имена: расширение файла или как язык зовут в разговоре.
-% Регистр listings не различает; C# разбирает \suaicode (раздел 15).
+% Короткие имена языков. C# разбирает \suaicode (раздел 15).
 \lstalias{cpp}{C++}
 \lstalias[]{cs}[Sharp]{C}
 \lstalias[]{csharp}[Sharp]{C}
@@ -358,13 +351,10 @@
      \suai@lstlanguage{}}}
 
 % Листинг с подписью на следующей странице начинается строкой
-% «Продолжение листинга N», как таблица: рамка закрывается внизу
-% страницы и открывается под этой строкой. В listings такого нет,
-% страницы он не видит. Поэтому код собирается в бокс и делится по
-% страницам здесь; листинг, который помещается целиком, встаёт на
-% страницу теми же строками, что и раньше. Без строки:
-% \renewcommand{\suailistingcontinued}{}. Листинг без подписи, плавающий
-% или стоящий внутри бокса (minipage, ячейка) делится по-старому.
+% «Продолжение листинга N», как таблица. listings страниц не видит,
+% поэтому код собирается в бокс и делится по страницам здесь. Листинг
+% без подписи, плавающий или стоящий внутри бокса (minipage, ячейка)
+% делит сам listings.
 \newcommand{\suailistingcontinued}{Продолжение листинга~\thelstlisting}
 \newif\ifsuai@lstsplit
 \newbox\suai@lstbox                    % код целиком
@@ -570,7 +560,6 @@
     \__suai_setup_flush:
   }
 
-% date = today -> ДД.ММ.ГГГГ на момент сборки
 \cs_new:Npn \__suai_two_digits:N #1
   { \int_compare:nNnT {#1} < { 10 } { 0 } \int_use:N #1 }
 \cs_new:cpn { suai@thedate }
@@ -934,8 +923,6 @@
 %%    4 — самая широкая ячейка в одну строку.
 %%  Берётся самый широкий уровень, который влезает в полосу, а остаток
 %%  делится пропорционально нехватке до следующего уровня, как в HTML.
-%%  Если не влезает даже уровень 1, столбец получает его, пока хватает
-%%  доли, остальные делят остаток поровну.
 %%---------------------------------------------------------------------
 \int_new:N \l__suai_cols_int
 \prop_new:N \l__suai_level_prop      % {уровень/столбец} -> pt
@@ -967,7 +954,6 @@
 \cs_generate_variant:Nn \prop_item:Nn { Ne }
 \cs_new:Npn \__suai_wd:nn #1#2
   { \prop_item:Ne \l__suai_level_prop { \int_eval:n {#1} / #2 } }
-% сумма уровня \l__suai_lvl_int по столбцам
 \cs_new:Npn \__suai_sum:
   { 0 \int_step_function:nN { \l__suai_cols_int } \__suai_sum_item:n }
 \cs_new:Npn \__suai_sum_item:n #1 { + \__suai_wd:nn { \l__suai_lvl_int } {#1} }
@@ -1394,11 +1380,9 @@
 
 %%---------------------------------------------------------------------
 %% 15. ЛИСТИНГИ
-%%  \suaicode[язык, метка]{файл}{Подпись}[метка] — код из файла (ищется
-%%  и в code/), метка по умолчанию lst:имя-файла.
+%%  \suaicode[язык, метка]{файл}{Подпись}[метка] — код из файла.
 %%  \suaicode[язык, метка]{Подпись} — код в тексте: строки с отступом
-%%  под командой, пустые строки внутри можно. Код кончается на первой
-%%  непустой строке без отступа; общий отступ срезается.
+%%  под командой до первой непустой строки без отступа.
 %%  [язык, метка]: без «=» — по позиции, с «=» — ключ listings.
 %%---------------------------------------------------------------------
 \int_new:N \l__suai_code_int

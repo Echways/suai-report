@@ -19,11 +19,11 @@ DOC = """\\documentclass[a4paper,14pt]{extarticle}
 LINES = "\\ExplSyntaxOn\\typeout{LINES=\\seq_count:N \\g__suai_lines_seq}\\ExplSyntaxOff\n"
 
 MARKS = "\\lstset{keywordstyle=\\typeout{KEYWORD}, commentstyle=\\typeout{COMMENT}}\n"
-# строка продолжения пишет в лог страницу, на которую попала
-CONTINUED = ("\\renewcommand{\\suailistingcontinued}{Продолжение листинга~\\thelstlisting"
+CONTINUED_LINE_LOGS_ITS_PAGE = ("\\renewcommand{\\suailistingcontinued}{Продолжение листинга~\\thelstlisting"
              "\\edef\\x{\\write-1{CONTINUED \\thelstlisting\\space PAGE "
              "\\noexpand\\thepage}}\\x}\n")
 UNKNOWN = "Язык листинга %s"
+UNCOMPRESSED_PDF = "\\special{dvipdfmx:config z 0}%\n"
 
 LANGUAGES = {
     "JavaScript": "const x = 1; // c",
@@ -54,6 +54,10 @@ def code(language, line):
     return f"\\suaicode[{language}]{{Код}}\n  {line}\n\n"
 
 
+def last_logged_skip(log, name):
+    return float(re.findall(rf"{name}=([\d.]+)pt", log)[-1])
+
+
 def long_code(lines, first="echo 0"):
     rest = "".join(f"  echo {n}\n" for n in range(1, lines))
     return f"\\suaicode[bash, long]{{Код}}\n  {first}\n{rest}\n"
@@ -65,9 +69,9 @@ class StyTest(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         root = self.root = Path(tmp.name)
-        suai.write_text(root / "main.tex", DOC % body)
+        suai.write_text_lf(root / "main.tex", DOC % body)
         for name, text in files.items():
-            suai.write_text(root / f"{name}.tex", text)
+            suai.write_text_lf(root / f"{name}.tex", text)
         env = dict(os.environ, TEXINPUTS=os.pathsep.join([".", str(suai.SRC), ""]))
         run = subprocess.run(
             ["xelatex", "-interaction=nonstopmode", "-halt-on-error", "main.tex"],
@@ -137,8 +141,7 @@ class StyTest(unittest.TestCase):
             "\\section{Дальше} % и здесь\n" + LINES)
         self.assertEqual(re.findall(r"LINES=(\d+)", log), ["3", "2"])
 
-    def items(self, body):
-        """Пункты списка так, как они набраны, вместе со знаком в конце."""
+    def typeset_items(self, body):
         log = self.build(
             "\\ExplSyntaxOn\\cs_set_eq:NN \\suaiitem \\__suai_list_item:nn\n"
             "\\cs_set_protected:Npn \\__suai_list_item:nn #1#2\n"
@@ -147,27 +150,24 @@ class StyTest(unittest.TestCase):
         return re.findall(r"ITEM=(.*)", log)
 
     def test_list_punctuation(self):
-        self.assertEqual(self.items("\\suailist\nпервый\nвторой;\nтретий,\n\n"),
+        self.assertEqual(self.typeset_items("\\suailist\nпервый\nвторой;\nтретий,\n\n"),
                          ["первый;", "второй;", "третий."])
 
     def test_abbreviation_keeps_its_dot(self):
         self.assertEqual(
-            self.items("\\suailist\nфайлы, папки и т. д.\nотчёты и др.;\n"
+            self.typeset_items("\\suailist\nфайлы, папки и т. д.\nотчёты и др.;\n"
                        "данные за 2026 г.\nвес 5 кг.\nпрочее и т.п.\n\n"),
             ["файлы, папки и т. д.;", "отчёты и др.;", "данные за 2026 г.;",
              "вес 5 кг;", "прочее и т.п."])
 
-    def test_nested_enumerate_has_no_latin_letters(self):
-        """Второй уровень enumerate — русские буквы со скобкой, как первый
-        уровень gostenum: латинского (a) в отчёте быть не должно."""
+    def test_nested_enumerate_has_russian_letters(self):
         log = self.build("\\makeatletter\n\\begin{enumerate}\n\\item один\n"
                          "\\begin{enumerate}\n\\item два\\typeout{LABEL=\\@itemlabel}\n"
                          "\\item три\\typeout{LABEL=\\@itemlabel}\n"
                          "\\end{enumerate}\n\\end{enumerate}\n")
         self.assertEqual(re.findall(r"LABEL=\{?([^{}]*)", log), ["а)", "б)"])
 
-    def test_table_spacing_follows_text(self):
-        """Интервал в таблицах как в тексте; \\suaitablestretch — один на все."""
+    def test_table_spacing_follows_text_or_suaitablestretch(self):
         body = ("\\typeout{TEXT=\\the\\baselineskip}\n"
                 "\\suaitable{Т}\nA | B\n\\typeout{AUTO=\\the\\baselineskip}x | y\n\n"
                 "\\begin{tabularx}{\\textwidth}{|X|}\\hline\n"
@@ -176,11 +176,8 @@ class StyTest(unittest.TestCase):
             with self.subTest(setup):
                 log = self.build(setup + body)
                 text = float(re.search(r"TEXT=([\d.]+)pt", log).group(1))
-                # \suaitable набирает ячейку ещё и при замере ширин, вне
-                # таблицы: в ней самой — последний раз
-                found = [float(re.findall(rf"{name}=([\d.]+)pt", log)[-1])
-                         for name in ("AUTO", "MANUAL")]
-                self.assertEqual(found, [text / 1.25 * stretch] * 2)
+                in_table = [last_logged_skip(log, name) for name in ("AUTO", "MANUAL")]
+                self.assertEqual(in_table, [text / 1.25 * stretch] * 2)
 
     def test_tabular_inside_paragraph_keeps_it_whole(self):
         log = self.build("\\renewcommand{\\suaitablestretch}{1}\n"
@@ -190,9 +187,8 @@ class StyTest(unittest.TestCase):
         self.assertIn("PARS=1", log)
 
     def test_appendix_bookmark_has_its_letter(self):
-        # закладки пишутся сразу в PDF; без сжатия их названия читаются как есть
-        self.build("\\special{dvipdfmx:config z 0}%\n"
-                   "\\suaiapp{Первое}\nтекст\n\\suaiapp[справочное]{Второе}\nтекст\n")
+        self.build(UNCOMPRESSED_PDF
+                   + "\\suaiapp{Первое}\nтекст\n\\suaiapp[справочное]{Второе}\nтекст\n")
         pdf = (self.root / "main.pdf").read_bytes()
         titles = [bytes.fromhex(t.decode()).decode("utf-16")
                   for t in re.findall(rb"/Title\s*<([0-9A-Fa-f]+)>", pdf)]
@@ -210,9 +206,7 @@ class StyTest(unittest.TestCase):
                 if " c" in line:
                     self.assertIn("COMMENT", chunk)
 
-    def test_keywords_are_not_bold(self):
-        """Полужирный — только для заголовков (ГОСТ 7.32-2017, п. 6.1.1):
-        в листинге его нет ни в обычном стиле, ни в цветном."""
+    def test_keywords_are_not_bold_in_either_style(self):
         for setup in "", "\\lstset{style=gostcolor}\n":
             with self.subTest(setup):
                 log = self.build("\\def\\bfseries{\\typeout{BOLD}}\n" + setup
@@ -246,21 +240,19 @@ class StyTest(unittest.TestCase):
         log = self.build(MARKS + code("YAML", "note: don't stop\n  enabled: true"))
         self.assertIn("KEYWORD", log)
 
-    def test_long_listing_is_continued(self):
-        """Над частью листинга на новой странице — «Продолжение листинга N»."""
-        log = self.build(CONTINUED + long_code(100) + code("bash", "echo"))
+    def test_long_listing_is_continued_on_each_next_page(self):
+        log = self.build(CONTINUED_LINE_LOGS_ITS_PAGE + long_code(100) + code("bash", "echo"))
         self.assertEqual(re.findall(r"CONTINUED (\S+) PAGE (\d+)", log),
                          [("1", "2"), ("1", "3")])
 
     def test_listing_on_one_page_is_not_continued(self):
-        log = self.build(CONTINUED + long_code(20) + "\\newpage\n" + long_code(20))
+        log = self.build(CONTINUED_LINE_LOGS_ITS_PAGE + long_code(20) + "\\newpage\n" + long_code(20))
         self.assertNotIn("CONTINUED", log)
 
-    def test_listing_without_number_is_not_continued(self):
-        """Без подписи номера нет, плавающий и в боксе не делятся."""
+    def test_uncaptioned_floating_or_boxed_listing_is_not_continued(self):
         lines = "".join(f"echo {n}\n" for n in range(100))
         log = self.build(
-            CONTINUED + "\\begin{lstlisting}\n" + lines + "\\end{lstlisting}\n"
+            CONTINUED_LINE_LOGS_ITS_PAGE + "\\begin{lstlisting}\n" + lines + "\\end{lstlisting}\n"
             + "\\begin{lstlisting}[float, caption=Код]\necho\n\\end{lstlisting}\n"
             + "\\begin{minipage}{\\textwidth}\n"
             + "\\begin{lstlisting}[caption=Код]\necho\n\\end{lstlisting}\n"
@@ -272,8 +264,7 @@ class StyTest(unittest.TestCase):
         log = self.build("\\renewcommand{\\suailistingcontinued}{}\n" + long_code(100))
         self.assertIn("(3 pages", log)
 
-    def test_listing_caption_stays_with_code(self):
-        """У низа страницы подпись не остаётся без кода."""
+    def test_listing_caption_stays_on_the_page_of_its_code(self):
         first = "@\\write-1{CODE PAGE \\thepage}@echo 0"
         for pars in range(29, 34):
             with self.subTest(pars):
