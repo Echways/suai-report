@@ -1,5 +1,7 @@
 ## Unreleased
 
+## 2.7.2 — 2026-10-07
+
 - Listings: keywords are no longer bold. GOST 7.32-2017 (6.1.1) keeps bold
   type for headings, and the package said so, but the default of `listings`
   was still in effect. The line breaks of a listing do not change. To get
