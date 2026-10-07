@@ -3,6 +3,8 @@ build/
 /ci/
 /dist/
 __pycache__/
+.pytest_cache/
+.benchmarks/
 .vscode/
 *.aux
 *.fdb_latexmk

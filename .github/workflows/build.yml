@@ -37,7 +37,7 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_sty.py -v
 
       - name: Демо-отчёт
-        run: python3 scripts/suai.py build demo
+        run: python3 scripts/suai.py build docs/demo
 
       - name: Заготовка, созданная генератором
         run: |
@@ -50,7 +50,7 @@ jobs:
           name: pdf
           if-no-files-found: ignore
           path: |
-            demo/build/main.pdf
+            docs/demo/build/main.pdf
             ci/lab-1/build/main.pdf
-            demo/build/main.log
+            docs/demo/build/main.log
             ci/lab-1/build/main.log

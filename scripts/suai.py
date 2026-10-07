@@ -30,7 +30,7 @@ SRC = REPO / "src"
 STY = SRC / "suai-report.sty"
 TEMPLATE = SRC / "template.tex"
 VSCODE = SRC / "vscode"
-DEMO = REPO / "demo" / "main.tex"
+DEMO = REPO / "docs" / "demo" / "main.tex"
 
 REPORT_GITIGNORE = "build/\n"
 LEGACY_PDF_NAME = "main.pdf"

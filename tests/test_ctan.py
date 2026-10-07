@@ -145,10 +145,11 @@ class ArchiveTest(unittest.TestCase):
             for src in ctan.FILES.values():
                 (repo / src).parent.mkdir(parents=True, exist_ok=True)
                 (repo / src).write_bytes(b"x")
-            (repo / "demo" / "images").mkdir(parents=True, exist_ok=True)
-            (repo / "demo" / "images" / "scheme.png").write_bytes(b"png")
-            (repo / "demo" / "code").mkdir()
-            (repo / "demo" / "code" / "stats.cpp").write_bytes(b"cpp")
+            demo = repo / ctan.DEMO
+            (demo / "images").mkdir(parents=True, exist_ok=True)
+            (demo / "images" / "scheme.png").write_bytes(b"png")
+            (demo / "code").mkdir()
+            (demo / "code" / "stats.cpp").write_bytes(b"cpp")
             (repo / "CHANGELOG.md").write_text(CHANGELOG, encoding="utf-8")
             entries = ctan.archive_entries(repo)
             self.assertIn("README.md", entries)

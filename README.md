@@ -10,7 +10,7 @@
   <img src="docs/images/listing.png" width="31%" alt="Приложение с листингом">
 </p>
 
-Это страницы демо-отчёта: исходник — [demo/main.tex](demo/main.tex), готовый
+Это страницы демо-отчёта: исходник — [docs/demo/main.tex](docs/demo/main.tex), готовый
 PDF приложен к [последнему релизу](https://github.com/Echways/suai-report/releases/latest).
 
 ## Быстрый старт

@@ -11,15 +11,15 @@ src/
 ├── suai-report.sty      пакет: всё оформление отчёта
 ├── template.tex         заготовка, из которой suai new делает main.tex
 └── vscode/              настройки, подсказки и сниппеты; копируются в .vscode/ отчёта
-demo/
-├── main.tex             демо-отчёт: все команды шаблона
-└── images/, code/       его рисунки и исходный код
 scripts/
 ├── suai.py              команда suai
-└── ctan.py              версия, архив для CTAN, текст релиза
+├── ctan.py              версия, архив для CTAN, текст релиза
+└── ctan.json, ctan-readme.md   метаданные и README для CTAN
 tests/                   тесты команды, пакета, архива и документации
 docs/                    документация
-ctan/                    README и метаданные для CTAN
+└── demo/
+    ├── main.tex         демо-отчёт: все команды шаблона
+    └── images/, code/   его рисунки и исходный код
 ```
 
 Всё, что попадает в отчёты, лежит в `src/`. `suai-report.sty` установлен
@@ -52,7 +52,7 @@ ctan/                    README и метаданные для CTAN
 с которым пакет не работает.
 
 В Windows вместо `make` команды вызываются напрямую:
-`py scripts\suai.py build demo`, `py -m unittest discover -s tests`.
+`py scripts\suai.py build docs\demo`, `py -m unittest discover -s tests`.
 
 ## Тесты
 
@@ -78,7 +78,7 @@ GitHub Actions на каждый push гоняет тесты в Linux и Window
 - Изменение, которое меняет вид уже набираемого отчёта, лучше делать
   переключателем, а не новым умолчанием.
 - После правки сравни демо до и после: собери его на обеих версиях
-  и сравни вывод `pdftotext -bbox-layout demo/build/main.pdf`.
+  и сравни вывод `pdftotext -bbox-layout docs/demo/build/main.pdf`.
 - Новое поведение закрепляется тестом в `tests/test_sty.py`.
 
 Новая команда или ключ — это четыре места:
@@ -87,7 +87,7 @@ GitHub Actions на каждый push гоняет тесты в Linux и Window
 2. `src/vscode/suai-report.json` — подсказка в VS Code, при необходимости
    сниппет в `src/vscode/suai.code-snippets`;
 3. `docs/` — описание с примером и строка в таблице команд `README.md`;
-4. `demo/main.tex` — пример использования.
+4. `docs/demo/main.tex` — пример использования.
 
 Про пункты 3 и 4 напомнит `tests/test_docs.py`.
 
@@ -98,9 +98,9 @@ GitHub Actions на каждый push гоняет тесты в Linux и Window
 
 ```bash
 make
-pdftoppm -png -r 80 -f 1 -l 1 -singlefile demo/build/main.pdf docs/images/title
-pdftoppm -png -r 80 -f 5 -l 5 -singlefile demo/build/main.pdf docs/images/text
-pdftoppm -png -r 80 -f 12 -l 12 -singlefile demo/build/main.pdf docs/images/listing
+pdftoppm -png -r 80 -f 1 -l 1 -singlefile docs/demo/build/main.pdf docs/images/title
+pdftoppm -png -r 80 -f 5 -l 5 -singlefile docs/demo/build/main.pdf docs/images/text
+pdftoppm -png -r 80 -f 12 -l 12 -singlefile docs/demo/build/main.pdf docs/images/listing
 for n in title text listing; do
   convert docs/images/$n.png -bordercolor '#c8c8c8' -border 1 docs/images/$n.png
 done
@@ -130,5 +130,5 @@ git push --follow-tags
 формы печатает `python3 scripts/ctan.py form`.
 
 В архив для CTAN входят `suai-report.sty`, заготовка, демо с PDF, его
-рисунками и кодом, [ctan/README.md](../ctan/README.md), лицензия и CHANGELOG
+рисунками и кодом, [scripts/ctan-readme.md](../scripts/ctan-readme.md), лицензия и CHANGELOG
 без раздела `Unreleased`.

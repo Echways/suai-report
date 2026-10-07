@@ -1,16 +1,17 @@
 SUAI = python3 scripts/suai.py
+DEMO = docs/demo
 TITLE_ARG = $(if $(TITLE),--title "$(TITLE)")
 
 .PHONY: pdf watch open test check clean new install uninstall ctan release
 
 pdf:
-	@$(SUAI) build demo
+	@$(SUAI) build $(DEMO)
 
 watch:
-	@$(SUAI) watch demo
+	@$(SUAI) watch $(DEMO)
 
 open:
-	@$(SUAI) open demo
+	@$(SUAI) open $(DEMO)
 
 test:
 	@python3 -m unittest discover -s tests
@@ -21,7 +22,7 @@ check: test pdf
 	  $(SUAI) build "$$tmp/lab-1" && echo "check: демо и заготовка собираются"
 
 clean:
-	@$(SUAI) clean demo
+	@$(SUAI) clean $(DEMO)
 
 new:
 	@test -n "$(DIR)" || { echo "Укажи папку: make new DIR=../lab-2"; exit 1; }

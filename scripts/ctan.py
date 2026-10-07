@@ -3,13 +3,13 @@
   ctan.py version              версия из \\ProvidesPackage в src/suai-report.sty
   ctan.py check-tag TAG        тег совпадает с версией, в CHANGELOG есть раздел
   ctan.py notes [--announce]   текст раздела текущей версии из CHANGELOG
-  ctan.py package              dist/suai-report.zip (нужен собранный demo/build/main.pdf)
+  ctan.py package              dist/suai-report.zip (нужен собранный docs/demo/build/main.pdf)
   ctan.py validate|upload      отправить dist/suai-report.zip в API CTAN (email в CTAN_EMAIL)
   ctan.py published            yes, если эта версия уже на CTAN
   ctan.py form                 поля для ручной загрузки через форму на ctan.org
   ctan.py release VERSION      поднять версию в suai-report.sty и CHANGELOG
 
-Метаданные пакета лежат в ctan/ctan.json. API: https://ctan.org/help/submit
+Метаданные пакета лежат в scripts/ctan.json. API: https://ctan.org/help/submit
 validate, upload и published запускаются только вручную: release.yml
 собирает архив и делает GitHub Release, а на CTAN архив загружается через
 форму (поля — ctan.py form).
@@ -32,7 +32,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 STY = REPO / "src" / "suai-report.sty"
 CHANGELOG = REPO / "CHANGELOG.md"
-META = REPO / "ctan" / "ctan.json"
+META = REPO / "scripts" / "ctan.json"
 DIST = REPO / "dist"
 ZIP = DIST / "suai-report.zip"
 
@@ -46,13 +46,14 @@ HYPHEN_OR_DASH = "[-–—]"
 SECTION_RE = re.compile(
     rf"^## (\S+)(?:\s*{HYPHEN_OR_DASH}\s*(\d{{4}}-\d{{2}}-\d{{2}}))?\s*$", re.M)
 
+DEMO = "docs/demo"
 FILES = {
-    "README.md": "ctan/README.md",
+    "README.md": "scripts/ctan-readme.md",
     "LICENSE": "LICENSE",
     "suai-report.sty": "src/suai-report.sty",
     "suai-report-template.tex": "src/template.tex",
-    "suai-report-demo.tex": "demo/main.tex",
-    "suai-report-demo.pdf": "demo/build/main.pdf",
+    "suai-report-demo.tex": f"{DEMO}/main.tex",
+    "suai-report-demo.pdf": f"{DEMO}/build/main.pdf",
 }
 DEMO_INPUT_FOLDERS = ("images", "code")
 FIELD_LIMITS = {"summary": 128, "description": 4096, "announcement": 8192}
@@ -129,9 +130,9 @@ def archive_entries(repo: Path = REPO) -> dict[str, bytes]:
             die(f"нет файла {src}{hint}")
         entries[name] = path.read_bytes()
     for folder in DEMO_INPUT_FOLDERS:
-        if not (repo / "demo" / folder).is_dir():
+        if not (repo / DEMO / folder).is_dir():
             continue
-        for path in sorted((repo / "demo" / folder).iterdir()):
+        for path in sorted((repo / DEMO / folder).iterdir()):
             if path.is_file() and not path.name.startswith("."):
                 entries[f"{folder}/{path.name}"] = path.read_bytes()
     entries["CHANGELOG.md"] = changelog_for_archive(
